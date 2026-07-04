@@ -6,6 +6,16 @@ This repo is a subordinate/portfolio implementation of the Playfit mobile produc
 
 The project starts as a Kotlin + Jetpack Compose app with mock data and a fully wired local-first data layer (Room, Hilt, WorkManager). The first goal is to match the iOS SwiftUI scaffold, then prove the native Android flow works before adding auth and full API sync.
 
+### Route mapping
+
+| Web (product) | Android (Compose NavHost) |
+|---|---|
+| `/` (Play Next) | `play-next` |
+| `/game/[gameId]` | `game/{gameId}` |
+| `/picks` | `picks` |
+| `/taste` | `taste` |
+| `/settings` | `settings` |
+
 ## Scope
 
 The Android app should reinterpret the mobile `/play` product flow from the web app:

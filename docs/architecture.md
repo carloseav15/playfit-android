@@ -2,7 +2,7 @@
 
 ## Intent
 
-Playfit for Android should be a native Android product showcase, not a web view and not a direct clone of React components. It borrows the product contract from `/play`, then presents it through Android-native Compose, Material 3, navigation, and adaptive layout patterns.
+Playfit for Android should be a native Android product showcase, not a web view and not a direct clone of React components. It borrows the product contract from the web app's root-level `/play` experience (now served at `/`, `/game/[gameId]`, `/picks`, `/taste`, `/settings`), then presents it through Android-native Compose, Material 3, navigation, and adaptive layout patterns.
 
 ## Current Shape
 

@@ -3,6 +3,7 @@ package com.carlosarancibia.playfit.data.repository
 import androidx.room.withTransaction
 import com.carlosarancibia.playfit.data.DataSource
 import com.carlosarancibia.playfit.data.PlayfitRepository
+import com.carlosarancibia.playfit.data.PlatformDefinition
 import com.carlosarancibia.playfit.data.RepositoryError
 import com.carlosarancibia.playfit.data.RepositoryResult
 import com.carlosarancibia.playfit.data.auth.AuthManager
@@ -16,6 +17,7 @@ import com.carlosarancibia.playfit.data.remote.GameStateDto
 import com.carlosarancibia.playfit.data.remote.GameStateRequest
 import com.carlosarancibia.playfit.data.remote.BatchGamesRequest
 import com.carlosarancibia.playfit.data.remote.BatchGamesResponse
+import com.carlosarancibia.playfit.data.remote.SimilarGamesRequest
 import com.carlosarancibia.playfit.data.remote.DeleteGameStateOperation
 import com.carlosarancibia.playfit.data.remote.OnboardingDraftDto
 import com.carlosarancibia.playfit.data.remote.PersistedOnboardingDto
@@ -337,6 +339,30 @@ class PlayfitRepositoryImpl @Inject constructor(
 
     override suspend fun refreshRecommendations(): RepositoryResult<ProductPlayNextModel> =
         getTodayRecommendations()
+
+    override suspend fun getSimilarGames(gameId: String): RepositoryResult<List<SimilarGame>> {
+        return try {
+            val response = apiService.getSimilarRecommendations(SimilarGamesRequest(gameId))
+            RepositoryResult.Success(
+                response.similar.map { SimilarGame(it.gameId, it.title, it.score) },
+                DataSource.Network,
+            )
+        } catch (error: Exception) {
+            RepositoryResult.Failure(error.toRepositoryError())
+        }
+    }
+
+    override suspend fun getPlatforms(): RepositoryResult<List<PlatformDefinition>> {
+        return try {
+            val response = apiService.getPlatforms()
+            RepositoryResult.Success(
+                response.platforms.map { PlatformDefinition(it.id, it.name, it.slug) },
+                DataSource.Network,
+            )
+        } catch (error: Exception) {
+            RepositoryResult.Failure(error.toRepositoryError())
+        }
+    }
 
     override suspend fun searchGames(query: String, limit: Int): RepositoryResult<List<SeedGame>> {
         return try {

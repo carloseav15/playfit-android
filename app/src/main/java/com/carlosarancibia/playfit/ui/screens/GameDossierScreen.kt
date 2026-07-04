@@ -63,11 +63,11 @@ fun GameDossierScreen(
     var showPlayedDialog by remember { mutableStateOf(false) }
     var showFeedbackChips by remember { mutableStateOf(false) }
 
-    val gameState = remember(viewModel.productState.value.user.gameStates, entry.game.gameId) {
-        viewModel.productState.value.user.gameStates[entry.game.gameId]
+    val gameState = remember(viewModel.state.value.user.gameStates, entry.game.gameId) {
+        viewModel.state.value.user.gameStates[entry.game.gameId]
     }
-    val ownedPlatformIds = remember(viewModel.productState.value.user.onboarding.platforms) {
-        viewModel.productState.value.user.onboarding.platforms.map { it.platformId }.toSet()
+    val ownedPlatformIds = remember(viewModel.state.value.user.onboarding.platforms) {
+        viewModel.state.value.user.onboarding.platforms.map { it.platformId }.toSet()
     }
     val gamePlatforms = remember(entry.game.availablePlatformIds, entry.game.availablePlatformNames) {
         entry.game.availablePlatformIds.zip(entry.game.availablePlatformNames)

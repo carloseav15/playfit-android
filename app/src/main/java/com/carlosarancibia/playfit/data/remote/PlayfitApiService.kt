@@ -15,11 +15,17 @@ interface PlayfitApiService {
     @POST("api/recommendations/today")
     suspend fun getTodayRecommendations(): TodayResponse
 
-    @GET("api/recommendations/picks")
+    @POST("api/recommendations/picks")
     suspend fun getPicks(): PicksResponse
 
-    @GET("api/recommendations/game/{gameId}")
+    @POST("api/recommendations/game/{gameId}")
     suspend fun getGameRecommendation(@Path("gameId") gameId: String): GameResponse
+
+    @POST("api/recommendations/similar")
+    suspend fun getSimilarRecommendations(@Body request: SimilarGamesRequest): SimilarGamesResponse
+
+    @GET("api/platforms")
+    suspend fun getPlatforms(): PlatformsResponse
 
     @POST("api/recommendations/profile")
     suspend fun buildProfile(@Body request: ProfileBuildRequest): ProfileBuildResponse
@@ -259,4 +265,26 @@ data class BatchGamesResponse(
 @Serializable
 data class DeleteGameStateOperation(
     val gameId: String,
+)
+
+@Serializable
+data class SimilarGamesRequest(
+    val gameId: String,
+)
+
+@Serializable
+data class SimilarGamesResponse(
+    val similar: List<SimilarGameDto> = emptyList(),
+)
+
+@Serializable
+data class PlatformDto(
+    val id: String = "",
+    val name: String = "",
+    val slug: String = "",
+)
+
+@Serializable
+data class PlatformsResponse(
+    val platforms: List<PlatformDto> = emptyList(),
 )

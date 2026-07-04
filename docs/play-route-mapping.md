@@ -1,19 +1,19 @@
-# `/play` to Android Mapping
+# Web to Android Route Mapping
 
-Source web routes:
+Source web routes (all at root level — `(play)` route group, no `/play` prefix):
 
-```text
-/play
-/play/game/[gameId]
-/play/picks
-/play/taste
-/play/settings
+```
+/
+/game/[gameId]
+/picks
+/taste
+/settings
 ```
 
 Source files:
 
-```text
-/Users/carancibia/Projects/playfit/product/apps/web/src/app/play
+```
+/Users/carancibia/Projects/playfit/product/apps/web/src/app/(play)
 /Users/carancibia/Projects/playfit/product/apps/web/src/components/playfit-mvp
 ```
 
@@ -21,11 +21,22 @@ Native Android destinations:
 
 | Web route | Android screen | Kotlin file |
 | --- | --- | --- |
-| `/play` | Play Next | `TodayScreen.kt` |
-| `/play/game/[gameId]` | Game Detail | `GameDetailScreen.kt` |
-| `/play/picks` | Picks | `PicksScreen.kt` |
-| `/play/taste` | Taste | `TasteScreen.kt` |
-| `/play/settings` | Settings | `SettingsScreen.kt` |
+| `/` | Play Next | `PlayNextScreen.kt` |
+| `/game/[gameId]` | Game Dossier | `GameDossierScreen.kt` |
+| `/picks` | Picks | `PicksScreen.kt` |
+| `/taste` | Taste | `TasteScreen.kt` |
+| `/settings` | Settings | `SettingsScreen.kt` |
+
+Android nav routes (internal Compose NavHost, not URLs):
+
+```
+play-next
+game/{gameId}
+picks
+taste
+taste-map
+settings
+```
 
 ## Product Contract
 
