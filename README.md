@@ -1,6 +1,6 @@
 # playfit-android
 
-**Public portfolio project.** Native Android showcase for the [Playfit](https://github.com/carloseav15/playfit) `/play` experience.
+**Public portfolio project.** Native Android showcase for the [Playfit](https://github.com/carloseav15/playfit) product experience.
 
 This repo is a subordinate/portfolio implementation of the Playfit mobile product vision. The main project ecosystem lives at [github.com/carloseav15/playfit](https://github.com/carloseav15/playfit).
 
@@ -18,7 +18,7 @@ The project starts as a Kotlin + Jetpack Compose app with mock data and a fully 
 
 ## Scope
 
-The Android app should reinterpret the mobile `/play` product flow from the web app:
+The Android app should reinterpret the mobile Playfit product flow from the web app:
 
 - `Play Next`: one strong recommendation plus a short queue.
 - `Game Detail`: cover, metadata, match score, reasons, and action buttons.
