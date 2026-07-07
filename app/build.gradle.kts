@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -5,6 +7,21 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
 }
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use(::load)
+    }
+}
+
+fun requiredProperty(name: String): String =
+    project.findProperty(name)?.toString()
+        ?: localProperties.getProperty(name)
+        ?: error("Missing required Gradle property: $name")
+
+fun buildConfigString(value: String): String =
+    "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {
     namespace = "com.carlosarancibia.playfit"
@@ -17,18 +34,18 @@ android {
         versionCode = 1
         versionName = "0.1"
 
-        buildConfigField("String", "SUPABASE_URL", "\"https://vhhnwjuwqbspvllvppnn.supabase.co\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_In29cjV8e5T_obAhkwTZkw_ndu8R_ch\"")
-        buildConfigField("String", "API_BASE_URL", "\"https://playfit-gold.vercel.app\"")
+        buildConfigField("String", "SUPABASE_URL", buildConfigString(requiredProperty("PLAYFIT_SUPABASE_URL")))
+        buildConfigField("String", "SUPABASE_ANON_KEY", buildConfigString(requiredProperty("PLAYFIT_SUPABASE_ANON_KEY")))
+        buildConfigField("String", "API_BASE_URL", buildConfigString(requiredProperty("PLAYFIT_API_BASE_URL")))
         buildConfigField("String", "AUTH_REDIRECT_URL", "\"playfit://auth-callback\"")
         buildConfigField("String", "BUILD_ENVIRONMENT", "\"production\"")
     }
 
     buildTypes {
         getByName("debug") {
-            buildConfigField("String", "SUPABASE_URL", "\"http://10.0.2.2:54321\"")
-            buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH\"")
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000\"")
+            buildConfigField("String", "SUPABASE_URL", buildConfigString(requiredProperty("PLAYFIT_DEBUG_SUPABASE_URL")))
+            buildConfigField("String", "SUPABASE_ANON_KEY", buildConfigString(requiredProperty("PLAYFIT_DEBUG_SUPABASE_ANON_KEY")))
+            buildConfigField("String", "API_BASE_URL", buildConfigString(requiredProperty("PLAYFIT_DEBUG_API_BASE_URL")))
             buildConfigField("String", "BUILD_ENVIRONMENT", "\"development\"")
         }
         getByName("release") {

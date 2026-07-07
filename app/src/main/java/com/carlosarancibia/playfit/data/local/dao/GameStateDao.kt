@@ -17,9 +17,6 @@ interface GameStateDao {
     @Query("SELECT * FROM game_states")
     suspend fun getAllStates(): List<GameStateEntity>
 
-    @Query("SELECT * FROM game_states WHERE inPlayfitPicks = 1")
-    fun getPicksFlow(): Flow<List<GameStateEntity>>
-
     @Query("SELECT * FROM game_states WHERE syncPending = 1")
     suspend fun getPendingSync(): List<GameStateEntity>
 

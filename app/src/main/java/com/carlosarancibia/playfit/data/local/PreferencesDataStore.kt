@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -29,10 +28,6 @@ class PreferencesDataStore @Inject constructor(
         dataStore.edit { it[keyOnboardingCompleted] = completed }
     }
 
-    val lastSyncAt: Flow<Long> = dataStore.data.map { prefs ->
-        prefs[keyLastSyncAt] ?: 0L
-    }
-
     suspend fun setLastSyncAt(timestamp: Long) {
         dataStore.edit { it[keyLastSyncAt] = timestamp }
     }
@@ -43,10 +38,6 @@ class PreferencesDataStore @Inject constructor(
 
     suspend fun setThemeMode(mode: String) {
         dataStore.edit { it[keyThemeMode] = mode }
-    }
-
-    suspend fun isOnboardingCompleted(): Boolean {
-        return dataStore.data.first()[keyOnboardingCompleted] ?: false
     }
 
     val selectedPlatformIds: Flow<Set<String>> = dataStore.data.map { prefs ->

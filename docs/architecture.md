@@ -1,67 +1,69 @@
 # Architecture
 
-## Intent
+## Scope
 
-Playfit for Android should be a native Android product showcase, not a web view and not a direct clone of React components. It borrows the product contract from the web app's root-level `/play` experience (now served at `/`, `/game/[gameId]`, `/picks`, `/taste`, `/settings`), then presents it through Android-native Compose, Material 3, navigation, and adaptive layout patterns.
+The Android client is a native Jetpack Compose implementation of Playfit's product contract. It consumes the Next.js API, uses Supabase Auth for identity, and keeps user mutations usable through transient connectivity with Room and WorkManager.
 
-## Current Shape
-
-The first pass is intentionally monomodule:
+## Layers
 
 ```text
-app/
-  data/
-  model/
+app/src/main/java/com/carlosarancibia/playfit/
   ui/
-    components/
-    screens/
-    theme/
+    screens/            # auth, onboarding, play next, dossier, picks, taste, settings
+    components/         # reusable product and design components
+    viewmodel/          # PlayfitViewModel and UI transformations
+  model/                # domain models and pure product rules
+  data/
+    PlayfitRepository   # UI-facing contract
+    repository/         # local/remote orchestration
+    remote/             # Retrofit API and authenticated interceptor
+    local/              # Room database, DAOs/entities and DataStore
+    auth/               # anonymous/Google Supabase session management
+    sync/               # WorkManager queue replay
+  di/                   # Hilt modules
 ```
 
-That keeps the project easy to open, compile, and inspect. When API/cache work begins, split into modules only when there is real complexity:
+Compose screens observe state from `PlayfitViewModel`; they do not call Retrofit or Room directly. `PlayfitRepositoryImpl` is the coordination boundary and returns results with their local or remote source plus pending-sync state.
 
-```text
-core:model
-core:design
-core:data
-feature:playnext
-feature:gamedetail
-feature:picks
-feature:taste
-feature:settings
+## Data flow
+
+```mermaid
+flowchart LR
+  Screen[Compose screen] --> VM[PlayfitViewModel]
+  VM --> Repo[PlayfitRepository]
+  Repo --> API[Retrofit Playfit API]
+  Repo --> Room[(Room cache and outbox)]
+  Repo --> Prefs[DataStore]
+  Room --> Worker[WorkManager SyncWorker]
+  Worker --> API
+  Auth[Supabase Auth] --> Interceptor[Bearer AuthInterceptor]
+  Interceptor --> API
 ```
 
-## Next Data Direction
+Reads prefer the API and fall back to the appropriate Room cache when the network fails. Game-state, feedback, pick, onboarding, and reset mutations update local state first. Failed remote writes remain marked or queued and `SyncWorker` retries them under a unique network-constrained job.
 
-Phase 1 uses mock data only.
+`pending_operations` represents deletions, feedback/pick changes, onboarding/profile updates, and taste reset operations that cannot be expressed only as a cached row. The worker processes reset first, then pending game states and other queued operations.
 
-Phase 2 should introduce a repository interface:
+## Identity
 
-```text
-PlayfitRepository
-  getTodayRecommendations()
-  getPicks()
-  getTasteProfile()
-  saveGameState(gameId, state)
+`AuthManager` owns Supabase sessions. Anonymous sign-in creates a real Supabase user, and Google linking is the upgrade path for preserving the same account and remote profile. `AuthInterceptor` attaches the current access token to Next.js API requests.
+
+`deviceId` is retained in the mobile contract for compatibility and local bookkeeping. It is not accepted as authorization by the server; remote persistence requires a valid Supabase session.
+
+Supabase and API endpoints are supplied through Gradle properties, normally from ignored `local.properties`. Copy `local.properties.example` and provide environment-specific values. No URL or anon key is committed in `app/build.gradle.kts`.
+
+## Navigation and adaptive UI
+
+The route graph covers splash/auth, onboarding, decision intro, Play Next, dossier, picks, taste map, activity, and settings. The UI uses Material 3 Compose components and adapts navigation/content layout to available width while keeping domain decisions in model/viewmodel code.
+
+## Build and verification
+
+From `android-compose/`:
+
+```bash
+./gradlew assembleDebug
+./gradlew testDebugUnitTest
+./gradlew lintDebug
 ```
 
-Phase 3 should add:
-
-- API client for Playfit product endpoints.
-- Room for cached recommendations and game state.
-- DataStore for user preferences.
-- WorkManager for deferred sync.
-- ViewModels exposing `StateFlow`.
-
-## Design Direction
-
-Use Material 3 and Compose idioms first:
-
-- `Scaffold`
-- `NavigationBar`
-- `Card`
-- `AssistChip`
-- `LazyColumn`
-- responsive/adaptive layouts
-
-Material 3 Expressive should be used as a product-quality layer, not decoration. The first priority is clarity: one recommendation, why it fits, and fast feedback.
+Unit tests cover domain and repository behavior. UI/device tests and production endpoint validation remain separate release checks; debug builds must point at an explicitly configured environment.

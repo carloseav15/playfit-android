@@ -44,12 +44,5 @@ interface PlayfitRepository {
     suspend fun togglePick(gameId: String, picked: Boolean): RepositoryResult<Unit>
     suspend fun refreshRecommendations(): RepositoryResult<ProductPlayNextModel>
     suspend fun getSimilarGames(gameId: String): RepositoryResult<List<SimilarGame>>
-    suspend fun getPlatforms(): RepositoryResult<List<PlatformDefinition>>
     suspend fun searchGames(query: String, limit: Int = 20): RepositoryResult<List<SeedGame>>
 }
-
-data class PlatformDefinition(
-    val id: String,
-    val name: String,
-    val slug: String,
-)

@@ -56,7 +56,6 @@ class AuthManager @Inject constructor(
         }
     }
 
-    val sessionStatus: StateFlow<SessionStatus> = supabase.auth.sessionStatus
     val deviceId: String get() = deviceIdProvider.id
     val cachedAccessToken: String? get() = _cachedAccessToken
 

@@ -13,9 +13,6 @@ interface PicksDao {
     @Query("SELECT * FROM picks ORDER BY addedAt DESC")
     fun getAllPicks(): Flow<List<PicksEntity>>
 
-    @Query("SELECT * FROM picks WHERE gameId = :gameId")
-    suspend fun getPick(gameId: String): PicksEntity?
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(pick: PicksEntity)
 

@@ -47,7 +47,6 @@ import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.ProductDecisionFeedback
 import com.carlosarancibia.playfit.model.ProductProfile
 import com.carlosarancibia.playfit.model.ProductTasteModel
-import com.carlosarancibia.playfit.ui.components.TokenRow
 import com.carlosarancibia.playfit.ui.components.design.GlowBackground
 import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing

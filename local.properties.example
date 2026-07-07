@@ -1,0 +1,7 @@
+sdk.dir=/path/to/Android/sdk
+PLAYFIT_SUPABASE_URL=https://your-project.supabase.co
+PLAYFIT_SUPABASE_ANON_KEY=your-publishable-key
+PLAYFIT_API_BASE_URL=https://your-api.example.com
+PLAYFIT_DEBUG_SUPABASE_URL=http://10.0.2.2:54321
+PLAYFIT_DEBUG_SUPABASE_ANON_KEY=your-local-publishable-key
+PLAYFIT_DEBUG_API_BASE_URL=http://10.0.2.2:3000

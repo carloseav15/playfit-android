@@ -26,6 +26,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,11 +64,13 @@ fun GameDossierScreen(
     var showPlayedDialog by remember { mutableStateOf(false) }
     var showFeedbackChips by remember { mutableStateOf(false) }
 
-    val gameState = remember(viewModel.state.value.user.gameStates, entry.game.gameId) {
-        viewModel.state.value.user.gameStates[entry.game.gameId]
+    val productState by viewModel.state.collectAsState()
+
+    val gameState = remember(productState.user.gameStates, entry.game.gameId) {
+        productState.user.gameStates[entry.game.gameId]
     }
-    val ownedPlatformIds = remember(viewModel.state.value.user.onboarding.platforms) {
-        viewModel.state.value.user.onboarding.platforms.map { it.platformId }.toSet()
+    val ownedPlatformIds = remember(productState.user.onboarding.platforms) {
+        productState.user.onboarding.platforms.map { it.platformId }.toSet()
     }
     val gamePlatforms = remember(entry.game.availablePlatformIds, entry.game.availablePlatformNames) {
         entry.game.availablePlatformIds.zip(entry.game.availablePlatformNames)
@@ -531,33 +534,3 @@ fun GameDossierError(
     }
 }
 
-@Composable
-fun GameDossierNoProfile(onStartPlayNext: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        GlowBackground()
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(PlayfitSpacing.md),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = "Set up your taste first",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Black,
-            )
-            Spacer(Modifier.height(PlayfitSpacing.sm))
-            Text(
-                text = "Pick your platforms and a few games so Playfit can explain this recommendation.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(PlayfitSpacing.lg))
-            Button(onClick = onStartPlayNext) {
-                Text("Start Play Next", fontWeight = FontWeight.Bold)
-            }
-        }
-    }
-}

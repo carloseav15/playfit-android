@@ -3,7 +3,6 @@ package com.carlosarancibia.playfit.data.repository
 import androidx.room.withTransaction
 import com.carlosarancibia.playfit.data.DataSource
 import com.carlosarancibia.playfit.data.PlayfitRepository
-import com.carlosarancibia.playfit.data.PlatformDefinition
 import com.carlosarancibia.playfit.data.RepositoryError
 import com.carlosarancibia.playfit.data.RepositoryResult
 import com.carlosarancibia.playfit.data.auth.AuthManager
@@ -345,18 +344,6 @@ class PlayfitRepositoryImpl @Inject constructor(
             val response = apiService.getSimilarRecommendations(SimilarGamesRequest(gameId))
             RepositoryResult.Success(
                 response.similar.map { SimilarGame(it.gameId, it.title, it.score) },
-                DataSource.Network,
-            )
-        } catch (error: Exception) {
-            RepositoryResult.Failure(error.toRepositoryError())
-        }
-    }
-
-    override suspend fun getPlatforms(): RepositoryResult<List<PlatformDefinition>> {
-        return try {
-            val response = apiService.getPlatforms()
-            RepositoryResult.Success(
-                response.platforms.map { PlatformDefinition(it.id, it.name, it.slug) },
                 DataSource.Network,
             )
         } catch (error: Exception) {

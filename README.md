@@ -2,7 +2,11 @@
 
 **Public portfolio project.** Native Android showcase for the [Playfit](https://github.com/carloseav15/playfit) product experience.
 
-This repo is a subordinate/portfolio implementation of the Playfit mobile product vision. The main project ecosystem lives at [github.com/carloseav15/playfit](https://github.com/carloseav15/playfit).
+Playfit recommends games based on what you actually like, not what's popular. This repo is the
+native Android showcase of that product; full product context lives at
+[github.com/carloseav15/playfit](https://github.com/carloseav15/playfit).
+
+This repo is a subordinate/portfolio implementation of the Playfit mobile product vision.
 
 The project starts as a Kotlin + Jetpack Compose app with mock data and a fully wired local-first data layer (Room, Hilt, WorkManager). The first goal is to match the iOS SwiftUI scaffold, then prove the native Android flow works before adding auth and full API sync.
 
