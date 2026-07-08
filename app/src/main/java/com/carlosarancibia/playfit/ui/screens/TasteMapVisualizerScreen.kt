@@ -18,7 +18,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -41,13 +47,15 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.carlosarancibia.playfit.ui.components.design.GlowBackground
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
-import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 
@@ -151,6 +159,11 @@ fun TasteMapVisualizerScreen(
             }
         }
     }
+    LaunchedEffect(nodes) {
+        if (activeNodeId == null && nodes.isNotEmpty()) {
+            activeNodeId = nodes.first().id
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -163,11 +176,11 @@ fun TasteMapVisualizerScreen(
                     )
                 },
                 navigationIcon = {
-                    androidx.compose.material3.TextButton(onClick = onBack) {
-                        Text(
-                            text = "\u2190",
-                            fontSize = 20.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 },
@@ -181,10 +194,9 @@ fun TasteMapVisualizerScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding),
         ) {
-            GlowBackground()
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -294,9 +306,12 @@ private fun AffinityMapCanvas(
     Box(
         modifier = modifier
             .background(
-                color = Color.White.copy(alpha = 0.01f),
-                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(20.dp),
             )
+            .semantics {
+                contentDescription = "Affinity map with ${nodes.size} games. Use the game cards below to select a map node."
+            }
             .padding(20.dp)
             .onSizeChanged { size ->
                 canvasWidthPx = size.width.toFloat()
@@ -388,10 +403,22 @@ private fun MapNodeCard(
 ) {
     val nodeCol = nodeColor(node.type, false)
 
-    PlayfitGlassCard(
+    Card(
         modifier = Modifier
             .width(104.dp)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics {
+                role = Role.Button
+                contentDescription = "${node.title}, ${nodeTypeLabel(node.type)}${if (isSelected) ", selected" else ""}"
+            },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                nodeCol.copy(alpha = 0.16f)
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerLow
+            },
+        ),
     ) {
         Column(
             modifier = Modifier.padding(PlayfitSpacing.sm),

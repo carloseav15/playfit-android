@@ -174,6 +174,7 @@ data class ProductTasteHistoryEntry(
     val status: String? = null,
     val updatedAt: String? = null,
     val traits: List<String> = emptyList(),
+    val coverUrl: String? = null,
 )
 
 data class ProductTasteMapTrait(

@@ -21,6 +21,7 @@ import com.carlosarancibia.playfit.data.remote.DeleteGameStateOperation
 import com.carlosarancibia.playfit.data.remote.OnboardingDraftDto
 import com.carlosarancibia.playfit.data.remote.PersistedOnboardingDto
 import com.carlosarancibia.playfit.data.remote.PlatformSelectionDto
+import com.carlosarancibia.playfit.data.remote.PlatformsResponse
 import com.carlosarancibia.playfit.data.remote.PicksResponse
 import com.carlosarancibia.playfit.data.remote.PlayfitApiService
 import com.carlosarancibia.playfit.data.remote.ProfileBuildRequest
@@ -35,6 +36,7 @@ import com.carlosarancibia.playfit.data.sync.SyncManager
 import com.carlosarancibia.playfit.data.toRepositoryError
 import com.carlosarancibia.playfit.model.GameAccessStatus
 import com.carlosarancibia.playfit.model.PlatformAvailability
+import com.carlosarancibia.playfit.model.Platform
 import com.carlosarancibia.playfit.model.ProductConfidence
 import com.carlosarancibia.playfit.model.ProductDecisionFeedback
 import com.carlosarancibia.playfit.model.ProductGameState
@@ -55,6 +57,7 @@ import com.carlosarancibia.playfit.model.RankedSeedGame
 import com.carlosarancibia.playfit.model.SeedGame
 import com.carlosarancibia.playfit.model.SeedReleaseState
 import com.carlosarancibia.playfit.model.SimilarGame
+import com.carlosarancibia.playfit.model.fallbackPlatforms
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -76,13 +79,6 @@ class PlayfitRepositoryImpl @Inject constructor(
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-    override suspend fun signInAnonymously() = authManager.signInAnonymously()
-    override suspend fun signInWithGoogle() = authManager.signInWithGoogle()
-    override suspend fun resetPassword(email: String) = authManager.resetPassword(email)
-    override suspend fun signOut() = authManager.signOut()
-    override suspend fun deleteAccount() = authManager.deleteAccount()
-    override fun isAuthenticated(): Boolean = authManager.isAuthenticated()
-    override fun getDeviceId(): String = authManager.deviceId
     override fun observePendingSync(): Flow<Boolean> = combine(
         database.gameStateDao().observePendingSyncCount(),
         database.pendingOperationDao().observeCount(),
@@ -192,6 +188,27 @@ class PlayfitRepositoryImpl @Inject constructor(
             source = (profileResult as? RepositoryResult.Success)?.source ?: DataSource.Cache,
             isStale = (profileResult as? RepositoryResult.Success)?.isStale ?: true,
         )
+    }
+
+    override suspend fun getPlatforms(): RepositoryResult<List<Platform>> {
+        return try {
+            val response = apiService.getPlatforms()
+            cache(CACHE_PLATFORMS, response)
+            RepositoryResult.Success(
+                data = response.platforms.map { it.toDomain() },
+                source = DataSource.Network,
+            )
+        } catch (error: Exception) {
+            val cached = readCache<PlatformsResponse>(CACHE_PLATFORMS)
+                ?.platforms
+                ?.map { it.toDomain() }
+                .orEmpty()
+            if (cached.isNotEmpty()) {
+                RepositoryResult.Success(cached, DataSource.Cache, isStale = true)
+            } else {
+                RepositoryResult.Success(fallbackPlatforms, DataSource.Local, isStale = true)
+            }
+        }
     }
 
     override suspend fun getState(): RepositoryResult<ProductState> {
@@ -522,213 +539,6 @@ class PlayfitRepositoryImpl @Inject constructor(
         return runCatching { json.decodeFromString<T>(payload) }.getOrNull()
     }
 
-    private fun TodayResponse.toDomain() = ProductPlayNextModel(
-        primary = primary?.toDomain(),
-        alternatives = alternatives.map { it.toDomain() },
-        savedPickIds = savedPickIds,
-        stateVersion = stateVersion.orEmpty(),
-    )
-
-    private fun ProfileStateResponse.toDomain(localStates: List<GameStateEntity>): ProductState {
-        val persisted = state
-        val remoteStates = persisted?.gameStates.orEmpty().mapValues { (id, dto) -> dto.toDomain(id) }
-        val mergedStates = remoteStates + localStates.associate { it.gameId to it.toDomain() }
-        return ProductState(
-            user = ProductUserState(
-                profile = persisted?.profile?.toDomain(),
-                gameStates = mergedStates,
-                onboarding = persisted?.onboarding?.let { onboarding ->
-                    ProductOnboardingDraft(
-                        step = onboarding.step.toOnboardingStep(),
-                        platforms = onboarding.platforms.mapNotNull { platform ->
-                            com.carlosarancibia.playfit.model.ProductAccessStatus
-                                .fromApiValue(platform.status)
-                                ?.let { status ->
-                                    com.carlosarancibia.playfit.model.ProductPlatformSelection(
-                                        platformId = platform.platformId,
-                                        status = status,
-                                    )
-                                }
-                        },
-                        likedGameIds = onboarding.likedGameIds,
-                        dislikedGameIds = onboarding.dislikedGameIds,
-                    )
-                } ?: ProductOnboardingDraft(),
-                onboardingCompletedAt = persisted?.onboarding?.onboardingCompletedAt,
-            ),
-        )
-    }
-
-    private fun ProductOnboardingDraft.toPersistedDto(completedAt: String?) =
-        PersistedOnboardingDto(
-            step = "dislikes",
-            platforms = platforms.map { PlatformSelectionDto(it.platformId, it.status.apiValue) },
-            likedGameIds = likedGameIds,
-            dislikedGameIds = dislikedGameIds,
-            onboardingCompletedAt = completedAt,
-        )
-
-    private fun PersistedOnboardingDto.toDraftDto() = OnboardingDraftDto(
-        step = step,
-        platforms = platforms,
-        likedGameIds = likedGameIds,
-        dislikedGameIds = dislikedGameIds,
-    )
-
-    private fun String.toOnboardingStep(): ProductOnboardingStep = when (lowercase()) {
-        "anchors" -> ProductOnboardingStep.Anchors
-        "dislikes" -> ProductOnboardingStep.Dislikes
-        else -> ProductOnboardingStep.Platforms
-    }
-
-    private fun RankedSeedGameDto.toDomain() = RankedSeedGame(
-        game = game.toDomain(),
-        affinityScore = affinityScore,
-        riskScore = riskScore,
-        confidence = ProductConfidence.entries.firstOrNull { it.name == confidence } ?: ProductConfidence.Medium,
-        fitReasons = fitReasons,
-        cautionReasons = cautionReasons,
-        platformAvailability = PlatformAvailability.entries.firstOrNull { it.name == platformAvailability }
-            ?: PlatformAvailability.Unknown,
-        accessStatus = GameAccessStatus.entries.firstOrNull { it.name == accessStatus }
-            ?: GameAccessStatus.Unreleased,
-        inPlayfitPicks = inPlayfitPicks,
-        similarGames = similarGames.map { SimilarGame(it.gameId, it.title, it.score) },
-    )
-
-    private fun SeedGameDto.toDomain() = SeedGame(
-        gameId = gameId,
-        title = title,
-        aliases = aliases,
-        series = series.orEmpty(),
-        source = source.orEmpty(),
-        primaryGenre = primaryGenre.orEmpty(),
-        tags = tags,
-        coverPath = coverPath.orEmpty(),
-        externalCoverUrl = coverPath?.takeIf { it.isNotBlank() },
-        releaseYear = releaseYear,
-        availablePlatformIds = availablePlatformIds,
-        availablePlatformNames = availablePlatformNames,
-        releaseState = SeedReleaseState.entries.firstOrNull { it.name == releaseState } ?: SeedReleaseState.Released,
-    )
-
-    private fun com.carlosarancibia.playfit.data.remote.ProfileDto.toDomain() = ProductProfile(
-        summary = summary,
-        likedGenres = likedGenres,
-        avoidedGenres = avoidedGenres,
-        likedTags = likedTags,
-        dislikedTags = dislikedTags,
-        ratedCount = ratedCount,
-        signals = signals.map { ProductProfileSignal(it.id, it.tone, it.label, it.description) },
-    )
-
-    private fun GameStateDto.toDomain(gameId: String) = ProductGameState(
-        gameId = gameId,
-        title = title,
-        status = status?.let(ProductPlayStatus::fromApiValue),
-        rating = rating,
-        inBacklog = inBacklog ?: false,
-        inWishlist = inWishlist ?: false,
-        inPlayfitPicks = inPlayfitPicks ?: false,
-        excluded = excluded ?: false,
-        source = source,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-    )
-
-    private fun GameStateDto.toEntity(gameId: String) = GameStateEntity(
-        gameId = gameId,
-        status = status?.let(ProductPlayStatus::fromApiValue)?.apiValue,
-        rating = rating,
-        inPlayfitPicks = inPlayfitPicks ?: false,
-        inBacklog = inBacklog ?: false,
-        inWishlist = inWishlist ?: false,
-        excluded = excluded ?: false,
-        syncPending = false,
-    )
-
-    private fun RankedSeedGameDto.toEntity() = PicksEntity(
-        gameId = game.gameId,
-        title = game.title,
-        affinityScore = affinityScore,
-        fitReasons = fitReasons.joinToString("||"),
-        genres = game.primaryGenre.orEmpty(),
-        primaryGenre = game.primaryGenre.orEmpty(),
-        coverPath = game.coverPath.orEmpty(),
-    )
-
-    private fun PicksEntity.toDomain() = RankedSeedGame(
-        game = SeedGame(
-            gameId = gameId,
-            title = title,
-            primaryGenre = primaryGenre,
-            coverPath = coverPath,
-            externalCoverUrl = coverPath.takeIf { it.isNotBlank() },
-        ),
-        affinityScore = affinityScore,
-        riskScore = 0.0,
-        confidence = ProductConfidence.Medium,
-        fitReasons = fitReasons.split("||").filter { it.isNotBlank() },
-        cautionReasons = emptyList(),
-        platformAvailability = PlatformAvailability.Unknown,
-        accessStatus = GameAccessStatus.Playable,
-        inPlayfitPicks = true,
-    )
-
-    private fun GameStateEntity.toDomain() = ProductGameState(
-        gameId = gameId,
-        title = "",
-        status = status?.let(ProductPlayStatus::fromApiValue),
-        rating = rating,
-        inBacklog = inBacklog,
-        inWishlist = inWishlist,
-        inPlayfitPicks = inPlayfitPicks,
-        excluded = excluded,
-        updatedAt = Instant.ofEpochMilli(updatedAt).toString(),
-    )
-
-    private fun GameStateEntity.toProfileDto(): GameStateDto {
-        val timestamp = Instant.ofEpochMilli(updatedAt).toString()
-        return GameStateDto(
-            gameId = gameId,
-            title = "",
-            status = status,
-            rating = rating,
-            inPlayfitPicks = inPlayfitPicks,
-            inBacklog = inBacklog,
-            inWishlist = inWishlist,
-            excluded = excluded,
-            source = "manual",
-            createdAt = timestamp,
-            updatedAt = timestamp,
-        )
-    }
-
-    private fun ProductGameState.toEntity(syncPending: Boolean) = GameStateEntity(
-        gameId = gameId,
-        status = status?.apiValue,
-        rating = rating,
-        inPlayfitPicks = inPlayfitPicks,
-        inBacklog = inBacklog,
-        inWishlist = inWishlist,
-        excluded = excluded,
-        updatedAt = updatedAt.toEpochMillisOrNow(),
-        syncPending = syncPending,
-    )
-
-    private fun ProductGameState.toRequest() = GameStateRequest(
-        status = status?.apiValue,
-        rating = rating,
-        inPlayfitPicks = inPlayfitPicks,
-        inBacklog = inBacklog,
-        inWishlist = inWishlist,
-        excluded = excluded,
-        source = source,
-    )
-
-    private fun String.toEpochMillisOrNow(): Long =
-        runCatching { Instant.parse(this).toEpochMilli() }.getOrElse { System.currentTimeMillis() }
-
     companion object {
         const val OPERATION_SAVE_PROFILE = "save_profile"
         const val OPERATION_DELETE_GAME_STATE = "delete_game_state"
@@ -737,6 +547,7 @@ class PlayfitRepositoryImpl @Inject constructor(
         private const val RESET_TASTE_OPERATION_ID = "reset_taste"
         private const val CACHE_TODAY = "recommendations_today"
         private const val CACHE_PICKS = "recommendations_picks"
+        private const val CACHE_PLATFORMS = "platforms"
         private const val CACHE_PROFILE_BUILD = "profile_build"
         const val CACHE_PROFILE_STATE = "profile_state"
         private const val CACHE_TASTE_GAMES = "taste_games"

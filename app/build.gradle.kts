@@ -33,6 +33,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "SUPABASE_URL", buildConfigString(requiredProperty("PLAYFIT_SUPABASE_URL")))
         buildConfigField("String", "SUPABASE_ANON_KEY", buildConfigString(requiredProperty("PLAYFIT_SUPABASE_ANON_KEY")))
@@ -122,4 +123,8 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.turbine)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

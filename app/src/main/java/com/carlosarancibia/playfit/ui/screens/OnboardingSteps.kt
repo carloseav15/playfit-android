@@ -1,0 +1,497 @@
+package com.carlosarancibia.playfit.ui.screens
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.carlosarancibia.playfit.model.Platform
+import com.carlosarancibia.playfit.model.PlatformPreset
+import com.carlosarancibia.playfit.model.SeedGame
+import com.carlosarancibia.playfit.model.fallbackPlatforms
+import com.carlosarancibia.playfit.model.familyDisplayName
+import com.carlosarancibia.playfit.model.platformPresets
+import com.carlosarancibia.playfit.model.sortedPlatformFamilies
+import com.carlosarancibia.playfit.ui.components.design.GamepadIcon
+import com.carlosarancibia.playfit.ui.components.design.GlowBackground
+import com.carlosarancibia.playfit.ui.components.design.LaptopIcon
+import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
+import com.carlosarancibia.playfit.ui.components.design.TvIcon
+import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
+import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
+import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
+
+@Composable
+fun PlatformStep(
+    selectedIds: Set<String>,
+    platforms: List<Platform>,
+    onTogglePreset: (PlatformPreset) -> Unit,
+    onCustomize: () -> Unit,
+) {
+    Column {
+        Text(
+            text = "Where do you play?",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(PlayfitSpacing.xs))
+        Text(
+            text = "We will only recommend games available on your active platforms.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(PlayfitSpacing.lg))
+
+        Text(
+            text = "QUICK GROUPS",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            letterSpacing = 0.5.sp
+        )
+        Spacer(Modifier.height(PlayfitSpacing.sm))
+
+        // Grid of presets (2-column column of rows)
+        val presets = platformPresets
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (i in presets.indices step 2) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    PlatformPresetCard(
+                        preset = presets[i],
+                        selectedIds = selectedIds,
+                        platforms = platforms,
+                        onClick = { onTogglePreset(presets[i]) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (i + 1 < presets.size) {
+                        PlatformPresetCard(
+                            preset = presets[i + 1],
+                            selectedIds = selectedIds,
+                            platforms = platforms,
+                            onClick = { onTogglePreset(presets[i + 1]) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(PlayfitSpacing.lg))
+
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            TextButton(onClick = onCustomize) {
+                Text(
+                    text = "Customize Platforms...",
+                    fontWeight = FontWeight.Bold,
+                    color = PlayfitExtendedTheme.colors.playfitAccent
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PlatformPresetCard(
+    preset: PlatformPreset,
+    selectedIds: Set<String>,
+    platforms: List<Platform>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val presetPlatforms = platforms.filter(preset.match)
+    val presetIds = presetPlatforms.map { it.platformId }.toSet()
+    val selectedCount = presetIds.count { it in selectedIds }
+    val isSelected = presetIds.isNotEmpty() && selectedCount == presetIds.size
+    val isPartiallySelected = selectedCount > 0 && !isSelected
+
+    val accentColor = PlayfitExtendedTheme.colors.playfitAccent
+    val borderColor = when {
+        isSelected -> accentColor.copy(alpha = 0.4f)
+        isPartiallySelected -> accentColor.copy(alpha = 0.2f)
+        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+    }
+    val backgroundColor = when {
+        isSelected -> accentColor.copy(alpha = 0.08f)
+        isPartiallySelected -> accentColor.copy(alpha = 0.04f)
+        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+    }
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(16.dp))
+            .background(backgroundColor)
+            .clickable(onClick = onClick)
+            .background(
+                Brush.radialGradient(
+                    colors = if (isSelected) listOf(accentColor.copy(alpha = 0.08f), Color.Transparent)
+                    else listOf(Color.Transparent, Color.Transparent),
+                    radius = 200f
+                )
+            )
+            .padding(16.dp)
+            .fillMaxWidth()
+            .height(112.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = preset.label,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (isSelected) accentColor else MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = preset.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        lineHeight = 14.sp
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(
+                            if (isSelected) accentColor.copy(alpha = 0.15f)
+                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.03f)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val iconColor = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurfaceVariant
+                    when (preset.id) {
+                        "pc" -> LaptopIcon(modifier = Modifier.size(18.dp), color = iconColor)
+                        "retro" -> TvIcon(modifier = Modifier.size(18.dp), color = iconColor)
+                        else -> GamepadIcon(modifier = Modifier.size(18.dp), color = iconColor)
+                    }
+                }
+            }
+
+            val statusLabel = when {
+                isSelected -> "Selected"
+                isPartiallySelected -> "$selectedCount of ${presetIds.size}"
+                else -> "${presetIds.size} systems"
+            }
+            val statusColor = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+
+            Text(
+                text = statusLabel.uppercase(),
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Black,
+                color = statusColor,
+                letterSpacing = 0.8.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun LovedGamesStep(
+    likedGames: List<SeedGame?>,
+    onSlotClick: (Int) -> Unit,
+    onRemove: (Int) -> Unit
+) {
+    Column {
+        Text(
+            text = "Pick three games you loved",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(PlayfitSpacing.xs))
+        Text(
+            text = "Start with games that clicked. We will look for similar games.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(PlayfitSpacing.lg))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            for (i in 0..2) {
+                val game = likedGames.getOrNull(i)
+                GameSlotCard(
+                    game = game,
+                    indexLabel = "Select ${i + 1}",
+                    isLiked = true,
+                    onClick = { onSlotClick(i) },
+                    onRemove = { onRemove(i) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MissedGameStep(
+    dislikedGame: SeedGame?,
+    onSlotClick: () -> Unit,
+    onRemove: () -> Unit
+) {
+    Column {
+        Text(
+            text = "Pick one game that wasn't for you",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(PlayfitSpacing.xs))
+        Text(
+            text = "Tell us a popular game you didn't enjoy so we know what to avoid.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(PlayfitSpacing.lg))
+
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            GameSlotCard(
+                game = dislikedGame,
+                indexLabel = "Select Game",
+                isLiked = false,
+                onClick = onSlotClick,
+                onRemove = onRemove,
+                modifier = Modifier.fillMaxWidth(0.45f)
+            )
+        }
+    }
+}
+
+@Composable
+fun GameSlotCard(
+    game: SeedGame?,
+    indexLabel: String,
+    isLiked: Boolean,
+    onClick: () -> Unit,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val accentColor = if (isLiked) PlayfitExtendedTheme.colors.playfitAccent
+    else PlayfitExtendedTheme.colors.playfitNegative
+    val cardBgColor = if (isLiked) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+    else PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = 0.05f)
+    val dashColor = if (isLiked) MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+    else PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = 0.25f)
+
+    if (game != null) {
+        Box(
+            modifier = modifier
+                .aspectRatio(0.72f)
+                .clip(RoundedCornerShape(16.dp))
+                .clickable { onClick() }
+        ) {
+            val coverUrl = game.externalCoverUrl ?: game.coverPath
+            PlayfitCoverArt(
+                gameId = game.gameId,
+                title = game.title,
+                coverUrl = coverUrl.ifBlank { null },
+                modifier = Modifier.fillMaxSize()
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)),
+                            startY = 100f
+                        )
+                    )
+                    .padding(8.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = game.title,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = onClick,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(8.dp)
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.86f)),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Change ${game.title}",
+                    tint = accentColor,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.86f))
+                    .clickable { onRemove() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Remove ${game.title}",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+    } else {
+        // Empty slot with premium dashed border drawn via pathEffect
+        Box(
+            modifier = modifier
+                .aspectRatio(0.72f)
+                .clip(RoundedCornerShape(16.dp))
+                .background(cardBgColor)
+                .clickable { onClick() }
+                .drawBehind {
+                    val stroke = Stroke(
+                        width = 1.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f)
+                    )
+                    drawRoundRect(
+                        color = dashColor,
+                        style = stroke,
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
+                    )
+                }
+                .padding(1.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(
+                            if (isLiked) PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.12f)
+                            else PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = 0.12f)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "+",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = accentColor
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = indexLabel,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+            }
+        }
+    }
+}

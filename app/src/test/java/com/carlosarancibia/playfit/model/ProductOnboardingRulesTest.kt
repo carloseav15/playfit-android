@@ -7,30 +7,34 @@ import org.junit.Test
 class ProductOnboardingRulesTest {
     @Test
     fun `valid calibration requires platform exactly three loved and one miss`() {
-        assertTrue(ProductOnboardingRules.canComplete(validDraft()))
+        assertTrue(ProductOnboardingRules.validate(validDraft()) is ProductOnboardingValidation.Valid)
     }
 
     @Test
     fun `calibration rejects missing platforms`() {
-        assertFalse(ProductOnboardingRules.canComplete(validDraft().copy(platforms = emptyList())))
+        assertInvalid(validDraft().copy(platforms = emptyList()))
     }
 
     @Test
     fun `calibration rejects fewer or more than three loved games`() {
-        assertFalse(ProductOnboardingRules.canComplete(validDraft().copy(likedGameIds = listOf("a", "b"))))
-        assertFalse(ProductOnboardingRules.canComplete(validDraft().copy(likedGameIds = listOf("a", "b", "c", "d"))))
+        assertInvalid(validDraft().copy(likedGameIds = listOf("a", "b")))
+        assertInvalid(validDraft().copy(likedGameIds = listOf("a", "b", "c", "d")))
     }
 
     @Test
     fun `calibration rejects anything other than one missed game`() {
-        assertFalse(ProductOnboardingRules.canComplete(validDraft().copy(dislikedGameIds = emptyList())))
-        assertFalse(ProductOnboardingRules.canComplete(validDraft().copy(dislikedGameIds = listOf("x", "y"))))
+        assertInvalid(validDraft().copy(dislikedGameIds = emptyList()))
+        assertInvalid(validDraft().copy(dislikedGameIds = listOf("x", "y")))
     }
 
     @Test
     fun `calibration rejects duplicate and overlapping games`() {
-        assertFalse(ProductOnboardingRules.canComplete(validDraft().copy(likedGameIds = listOf("a", "a", "c"))))
-        assertFalse(ProductOnboardingRules.canComplete(validDraft().copy(dislikedGameIds = listOf("a"))))
+        assertInvalid(validDraft().copy(likedGameIds = listOf("a", "a", "c")))
+        assertInvalid(validDraft().copy(dislikedGameIds = listOf("a")))
+    }
+
+    private fun assertInvalid(draft: ProductOnboardingDraft) {
+        assertFalse(ProductOnboardingRules.validate(draft) is ProductOnboardingValidation.Valid)
     }
 
     private fun validDraft() = ProductOnboardingDraft(

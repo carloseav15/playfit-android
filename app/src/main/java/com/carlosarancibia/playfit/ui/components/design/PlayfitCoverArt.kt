@@ -63,8 +63,10 @@ fun PlayfitCoverArt(
     )
 
     // Resolve relative urls by prepending the host base URL
-    val resolvedUrl = if (coverUrl != null && coverUrl.startsWith("/")) {
-        "${com.carlosarancibia.playfit.BuildConfig.API_BASE_URL}$coverUrl"
+    val resolvedUrl = if (coverUrl != null && !coverUrl.startsWith("http")) {
+        val baseUrl = com.carlosarancibia.playfit.BuildConfig.API_BASE_URL.removeSuffix("/")
+        val relativePath = coverUrl.removePrefix("/")
+        "$baseUrl/$relativePath"
     } else {
         coverUrl
     }

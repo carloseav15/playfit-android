@@ -35,6 +35,7 @@ object ProductTasteDerivation {
                 status = gameState.status?.apiValue,
                 updatedAt = gameState.updatedAt.ifBlank { null },
                 traits = game?.traits().orEmpty(),
+                coverUrl = game?.externalCoverUrl ?: game?.coverPath,
             )
         }
 
@@ -48,6 +49,7 @@ object ProductTasteDerivation {
                     source = "onboarding_liked",
                     tone = "positive",
                     traits = game?.traits().orEmpty(),
+                    coverUrl = game?.externalCoverUrl ?: game?.coverPath,
                 )
             }
         }
@@ -62,6 +64,7 @@ object ProductTasteDerivation {
                     source = "onboarding_disliked",
                     tone = "negative",
                     traits = game?.traits().orEmpty(),
+                    coverUrl = game?.externalCoverUrl ?: game?.coverPath,
                 )
             }
         }

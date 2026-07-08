@@ -45,6 +45,14 @@ sealed interface RepositoryResult<out T> {
     data class Failure(val error: RepositoryError) : RepositoryResult<Nothing>
 }
 
+inline fun <T, R> RepositoryResult<T>.fold(
+    onSuccess: (RepositoryResult.Success<T>) -> R,
+    onFailure: (RepositoryError) -> R,
+): R = when (this) {
+    is RepositoryResult.Success -> onSuccess(this)
+    is RepositoryResult.Failure -> onFailure(this.error)
+}
+
 internal fun Throwable.toRepositoryError(): RepositoryError = when (this) {
     is IOException -> RepositoryError.Network(message ?: "No network connection.")
     is HttpException -> when (code()) {

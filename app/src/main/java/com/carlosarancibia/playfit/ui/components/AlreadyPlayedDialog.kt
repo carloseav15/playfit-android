@@ -4,11 +4,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -21,24 +30,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.ProductDecisionFeedback
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
+import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 
 private val options = listOf(
-    PlayedOption("Loved it", ProductDecisionFeedback.PlayedLoved, "\u2665"),
-    PlayedOption("Liked it", ProductDecisionFeedback.PlayedLiked, "\uD83D\uDC4D"),
-    PlayedOption("Mixed", ProductDecisionFeedback.PlayedMixed, "\u2248"),
-    PlayedOption("Dropped it", ProductDecisionFeedback.PlayedDropped, "\uD83D\uDC4E"),
+    PlayedOption("Loved it", ProductDecisionFeedback.PlayedLoved, Icons.Default.Favorite, Color(0xFF10B981)),
+    PlayedOption("Liked it", ProductDecisionFeedback.PlayedLiked, Icons.Default.ThumbUp, Color(0xFF6366F1)),
+    PlayedOption("Mixed", ProductDecisionFeedback.PlayedMixed, Icons.Default.Star, Color(0xFFF59E0B)),
+    PlayedOption("Dropped it", ProductDecisionFeedback.PlayedDropped, Icons.Default.Close, Color(0xFFEF4444)),
 )
 
 private data class PlayedOption(
     val label: String,
     val feedback: ProductDecisionFeedback,
-    val icon: String,
+    val icon: ImageVector,
+    val color: Color,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,35 +99,46 @@ fun AlreadyPlayedDialog(
                 modifier = Modifier.padding(horizontal = PlayfitSpacing.md),
             )
             Spacer(Modifier.height(PlayfitSpacing.lg))
-            Row(
+
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(PlayfitSpacing.sm),
+                verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.sm),
             ) {
-                options.forEach { option ->
-                    OutlinedButton(
-                        onClick = {
-                            onSelect(option.feedback)
-                            onDismiss()
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(80.dp),
-                        shape = RoundedCornerShape(16.dp),
+                listOf(options.take(2), options.drop(2)).forEach { pair ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(PlayfitSpacing.sm),
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Text(
-                                text = option.icon,
-                                style = MaterialTheme.typography.titleLarge,
-                            )
-                            Text(
-                                text = option.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Black,
-                                textAlign = TextAlign.Center,
-                            )
+                        pair.forEach { option ->
+                            OutlinedButton(
+                                onClick = {
+                                    onSelect(option.feedback)
+                                    onDismiss()
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(64.dp),
+                                shape = RoundedCornerShape(16.dp),
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
+                                    modifier = Modifier.fillMaxSize(),
+                                ) {
+                                    Icon(
+                                        imageVector = option.icon,
+                                        contentDescription = null,
+                                        tint = option.color,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = option.label,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
+                            }
                         }
                     }
                 }

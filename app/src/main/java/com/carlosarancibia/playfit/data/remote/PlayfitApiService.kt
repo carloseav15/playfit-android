@@ -60,9 +60,9 @@ interface PlayfitApiService {
 data class TodayResponse(
     val primary: RankedSeedGameDto? = null,
     val alternatives: List<RankedSeedGameDto> = emptyList(),
-    @SerialName("saved_pick_ids")
+    @SerialName("savedPickIds")
     val savedPickIds: List<String> = emptyList(),
-    @SerialName("state_version")
+    @SerialName("stateVersion")
     val stateVersion: String? = null,
 )
 
@@ -74,7 +74,7 @@ data class PicksResponse(
 @Serializable
 data class GameResponse(
     val entry: RankedSeedGameDto? = null,
-    @SerialName("state_version")
+    @SerialName("stateVersion")
     val stateVersion: String? = null,
 )
 
@@ -153,22 +153,22 @@ data class SignalDto(
 @Serializable
 data class RankedSeedGameDto(
     val game: SeedGameDto,
-    @SerialName("affinity_score")
+    @SerialName("affinityScore")
     val affinityScore: Double = 0.0,
-    @SerialName("risk_score")
+    @SerialName("riskScore")
     val riskScore: Double = 0.0,
     val confidence: String = "Medium",
-    @SerialName("fit_reasons")
+    @SerialName("fitReasons")
     val fitReasons: List<String> = emptyList(),
-    @SerialName("caution_reasons")
+    @SerialName("cautionReasons")
     val cautionReasons: List<String> = emptyList(),
-    @SerialName("platform_availability")
+    @SerialName("platformAvailability")
     val platformAvailability: String = "Unknown",
-    @SerialName("access_status")
+    @SerialName("accessStatus")
     val accessStatus: String = "Unknown",
-    @SerialName("in_playfit_picks")
+    @SerialName("inPlayfitPicks")
     val inPlayfitPicks: Boolean = false,
-    @SerialName("similar_games")
+    @SerialName("similarGames")
     val similarGames: List<SimilarGameDto> = emptyList(),
 )
 
@@ -180,18 +180,20 @@ data class SeedGameDto(
     val aliases: List<String> = emptyList(),
     val series: String? = null,
     val source: String? = null,
-    @SerialName("primary_genre")
+    @SerialName("primaryGenre")
     val primaryGenre: String? = null,
     val tags: List<String> = emptyList(),
-    @SerialName("cover_path")
+    @SerialName("coverPath")
     val coverPath: String? = null,
-    @SerialName("release_year")
+    @SerialName("externalCoverUrl")
+    val externalCoverUrl: String? = null,
+    @SerialName("releaseYear")
     val releaseYear: String? = null,
-    @SerialName("available_platform_ids")
+    @SerialName("availablePlatformIds")
     val availablePlatformIds: List<String> = emptyList(),
-    @SerialName("available_platform_names")
+    @SerialName("availablePlatformNames")
     val availablePlatformNames: List<String> = emptyList(),
-    @SerialName("release_state")
+    @SerialName("releaseState")
     val releaseState: String = "Released",
 )
 
@@ -210,11 +212,11 @@ data class GameStateDto(
     val title: String = "",
     val status: String? = null,
     val rating: Double? = null,
-    @SerialName("in_playfit_picks")
+    @SerialName("inPlayfitPicks")
     val inPlayfitPicks: Boolean? = null,
-    @SerialName("in_backlog")
+    @SerialName("inBacklog")
     val inBacklog: Boolean? = null,
-    @SerialName("in_wishlist")
+    @SerialName("inWishlist")
     val inWishlist: Boolean? = null,
     val excluded: Boolean? = null,
     val source: String = "manual",
@@ -234,11 +236,11 @@ data class ProfileSaveRequest(
 data class GameStateRequest(
     val status: String? = null,
     val rating: Double? = null,
-    @SerialName("in_playfit_picks")
+    @SerialName("inPlayfitPicks")
     val inPlayfitPicks: Boolean? = null,
-    @SerialName("in_backlog")
+    @SerialName("inBacklog")
     val inBacklog: Boolean? = null,
-    @SerialName("in_wishlist")
+    @SerialName("inWishlist")
     val inWishlist: Boolean? = null,
     val excluded: Boolean? = null,
     val source: String? = null,
@@ -279,9 +281,19 @@ data class SimilarGamesResponse(
 
 @Serializable
 data class PlatformDto(
-    val id: String = "",
-    val name: String = "",
+    @SerialName("platformId")
+    val platformId: String? = null,
+    @SerialName("displayName")
+    val displayName: String? = null,
+    val id: String? = null,
+    val name: String? = null,
     val slug: String = "",
+    val family: String? = null,
+    val kind: String? = null,
+    @SerialName("activeStatus")
+    val activeStatus: String? = null,
+    @SerialName("sortOrder")
+    val sortOrder: Int? = null,
 )
 
 @Serializable

@@ -31,7 +31,4 @@ object ProductOnboardingRules {
             else -> ProductOnboardingValidation.Valid
         }
     }
-
-    fun canComplete(draft: ProductOnboardingDraft): Boolean =
-        validate(draft) is ProductOnboardingValidation.Valid
 }

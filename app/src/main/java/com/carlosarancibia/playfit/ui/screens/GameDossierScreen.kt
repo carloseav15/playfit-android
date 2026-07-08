@@ -19,12 +19,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,7 +56,7 @@ import com.carlosarancibia.playfit.ui.components.FeedbackChips
 import com.carlosarancibia.playfit.ui.components.MetricCard
 import com.carlosarancibia.playfit.ui.components.ReasonList
 import com.carlosarancibia.playfit.ui.components.ReasonTone
-import com.carlosarancibia.playfit.ui.components.design.GlowBackground
+import com.carlosarancibia.playfit.ui.components.DossierActionBar
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.components.design.ShimmerBox
@@ -53,7 +64,7 @@ import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import com.carlosarancibia.playfit.ui.viewmodel.PlayfitViewModel
 import com.carlosarancibia.playfit.ui.viewmodel.ProductUtils
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun GameDossierScreen(
     entry: RankedSeedGame,
@@ -65,6 +76,7 @@ fun GameDossierScreen(
     var showFeedbackChips by remember { mutableStateOf(false) }
 
     val productState by viewModel.state.collectAsState()
+    val uiState by viewModel.ui.collectAsState()
 
     val gameState = remember(productState.user.gameStates, entry.game.gameId) {
         productState.user.gameStates[entry.game.gameId]
@@ -76,31 +88,65 @@ fun GameDossierScreen(
         entry.game.availablePlatformIds.zip(entry.game.availablePlatformNames)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        GlowBackground()
-        LazyColumn(
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Game Dossier",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                )
+            )
+        },
+        bottomBar = {
+            DossierActionBar(
+                isPicked = isPicked,
+                isSaving = uiState.saving,
+                onTogglePick = { viewModel.togglePick(entry.game.gameId) },
+                onAlreadyPlayed = { showPlayedDialog = true },
+                onNotForMe = {
+                    viewModel.applyDecisionFeedback(
+                        entry.game.gameId,
+                        ProductDecisionFeedback.NotForMe,
+                    )
+                    showFeedbackChips = true
+                },
+            )
+        },
+        containerColor = Color.Transparent,
+    ) { innerPadding ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = PlayfitSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.lg),
+                .background(MaterialTheme.colorScheme.background)
+                .padding(innerPadding)
         ) {
-            item {
-                Spacer(Modifier.height(PlayfitSpacing.md))
-                Text(
-                    text = "\u2190 Back",
-                    color = PlayfitExtendedTheme.colors.playfitAccent,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                        .clickable { onBack() },
-                )
-            }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = PlayfitSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.lg),
+            ) {
 
             item {
                 PlayfitCoverArt(
                     gameId = entry.game.gameId,
                     title = entry.game.title,
-                    coverUrl = entry.game.externalCoverUrl,
+                    coverUrl = entry.game.externalCoverUrl ?: entry.game.coverPath,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 40.dp),
@@ -130,10 +176,11 @@ fun GameDossierScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(PlayfitSpacing.xs)
                             ) {
-                                val hasYear = entry.game.releaseYear != null && entry.game.releaseYear.isNotBlank() && entry.game.releaseYear != "null"
+                                val year = entry.game.releaseYear
+                                val hasYear = !year.isNullOrBlank() && year != "null"
                                 if (hasYear) {
                                     Text(
-                                        text = entry.game.releaseYear!!,
+                                        text = year.orEmpty(),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.SemiBold,
@@ -263,22 +310,12 @@ fun GameDossierScreen(
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     if (isOwned) {
-                                        androidx.compose.foundation.Canvas(modifier = Modifier.size(10.dp)) {
-                                            val path = androidx.compose.ui.graphics.Path().apply {
-                                                moveTo(size.width * 0.15f, size.height * 0.5f)
-                                                lineTo(size.width * 0.45f, size.height * 0.8f)
-                                                lineTo(size.width * 0.85f, size.height * 0.2f)
-                                            }
-                                            drawPath(
-                                                path = path,
-                                                color = textCol,
-                                                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                                    width = 1.5.dp.toPx(),
-                                                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                                                    join = androidx.compose.ui.graphics.StrokeJoin.Round
-                                                )
-                                            )
-                                        }
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = textCol,
+                                            modifier = Modifier.size(10.dp)
+                                        )
                                     }
                                     Text(
                                         text = name,
@@ -344,48 +381,6 @@ fun GameDossierScreen(
                 )
             }
 
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.sm)) {
-                    Button(
-                        onClick = { viewModel.togglePick(entry.game.gameId) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = PlayfitExtendedTheme.colors.playfitAccent,
-                        ),
-                    ) {
-                        Text(
-                            text = if (isPicked) "Remove from Picks" else "Save to Picks",
-                            fontWeight = FontWeight.ExtraBold,
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(PlayfitSpacing.sm),
-                    ) {
-                        OutlinedButton(
-                            onClick = { showPlayedDialog = true },
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text("Already played", fontWeight = FontWeight.Bold)
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.applyDecisionFeedback(
-                                    entry.game.gameId,
-                                    ProductDecisionFeedback.NotForMe,
-                                )
-                                showFeedbackChips = true
-                            },
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text("Not for me", fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-
             if (showFeedbackChips) {
                 item {
                     FeedbackChips(
@@ -397,10 +392,11 @@ fun GameDossierScreen(
             }
 
             item {
-                Spacer(Modifier.height(PlayfitSpacing.xxl))
+                Spacer(Modifier.height(96.dp))
             }
         }
     }
+}
 
     if (showPlayedDialog) {
         AlreadyPlayedDialog(
@@ -414,123 +410,6 @@ fun GameDossierScreen(
     }
 }
 
-@Composable
-fun GameDossierLoading() {
-    Box(modifier = Modifier.fillMaxSize()) {
-        GlowBackground()
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(PlayfitSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.md),
-        ) {
-            Spacer(Modifier.height(PlayfitSpacing.lg))
-            ShimmerBox(
-                modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .height(28.dp),
-            )
-            Spacer(Modifier.height(PlayfitSpacing.sm))
-            ShimmerBox(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                shape = RoundedCornerShape(16.dp),
-            )
-            ShimmerBox(
-                modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .height(20.dp),
-            )
-            Spacer(Modifier.height(PlayfitSpacing.sm))
-            ShimmerBox(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(14.dp),
-            )
-            ShimmerBox(
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .height(14.dp),
-            )
-            ShimmerBox(
-                modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .height(14.dp),
-            )
-            Spacer(Modifier.height(PlayfitSpacing.md))
-            ShimmerBox(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp),
-                shape = RoundedCornerShape(12.dp),
-            )
-        }
-    }
-}
 
-@Composable
-fun GameDossierNotFound(onBack: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        GlowBackground()
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(PlayfitSpacing.md),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = "Game not found",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Black,
-            )
-            Spacer(Modifier.height(PlayfitSpacing.sm))
-            Text(
-                text = "This title is not in the current Playfit catalog.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(PlayfitSpacing.lg))
-            Button(onClick = onBack) {
-                Text("Back to Play Next", fontWeight = FontWeight.Bold)
-            }
-        }
-    }
-}
 
-@Composable
-fun GameDossierError(
-    message: String,
-    onRetry: () -> Unit,
-    onBack: () -> Unit,
-) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        GlowBackground()
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(PlayfitSpacing.md),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = "Could not load this game",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Black,
-            )
-            Spacer(Modifier.height(PlayfitSpacing.sm))
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(PlayfitSpacing.md))
-            Button(onClick = onRetry) { Text("Try again") }
-            TextButton(onClick = onBack) { Text("Back") }
-        }
-    }
-}
 

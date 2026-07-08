@@ -77,6 +77,12 @@ class PlayfitViewModelTest {
         ))
         coEvery { repository.getPicks() } returns success(emptyList())
         coEvery { repository.getTasteModel() } returns success(com.carlosarancibia.playfit.model.ProductTasteModel())
+        coEvery { repository.refreshRecommendations() } returns success(ProductPlayNextModel(
+            primary = null,
+            alternatives = emptyList(),
+            savedPickIds = emptyList(),
+            stateVersion = "v1",
+        ))
         coEvery { repository.togglePick(any(), any()) } returns success(Unit, pendingSync = true)
         coEvery { repository.applyFeedback(any(), any()) } returns success(Unit, pendingSync = true)
         coEvery { repository.saveOnboarding(any(), any()) } returns success(Unit)
@@ -85,6 +91,31 @@ class PlayfitViewModelTest {
         coEvery { repository.resetTaste() } returns success(Unit)
 
         viewModel = PlayfitViewModel(repository, authManager, preferencesDataStore)
+    }
+
+    @Test
+    fun `auth state exposes account details and available actions`() = runTest(testDispatcher) {
+        advanceUntilIdle()
+
+        val auth = viewModel.authState.value
+
+        assertTrue(auth.isAuthenticated)
+        assertTrue(auth.isAnonymous)
+        assertEquals("user-1", auth.userId)
+        assertTrue(auth.canLinkGoogle)
+        assertTrue(auth.canSignOut)
+        assertFalse(auth.canDeleteAccount)
+    }
+
+    @Test
+    fun `deleteAccount is not called when Android cloud deletion is unavailable`() = runTest(testDispatcher) {
+        advanceUntilIdle()
+
+        viewModel.deleteAccount()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { authManager.deleteAccount() }
+        assertEquals("Cloud account deletion is not available in the Android app yet.", viewModel.ui.value.toast)
     }
 
     @After
@@ -142,6 +173,24 @@ class PlayfitViewModelTest {
     }
 
     @Test
+    fun `togglePick refreshes recommendations after removing the last visible candidate`() = runTest(testDispatcher) {
+        advanceUntilIdle()
+        val refreshed = ProductPlayNextModel(
+            primary = recommendation("game2"),
+            alternatives = emptyList(),
+            savedPickIds = listOf("game1"),
+            stateVersion = "v2",
+        )
+        coEvery { repository.refreshRecommendations() } returns success(refreshed)
+
+        viewModel.togglePick("game1")
+        advanceUntilIdle()
+
+        coVerify { repository.refreshRecommendations() }
+        assertEquals("game2", viewModel.playNext.value?.primary?.game?.gameId)
+    }
+
+    @Test
     fun `togglePick removes pick when already present`() = runTest(testDispatcher) {
         advanceUntilIdle()
         coEvery { repository.getPicks() } returnsMany listOf(
@@ -170,8 +219,7 @@ class PlayfitViewModelTest {
 
     @Test
     fun `togglePick rejects terminal game without repository write`() = runTest(testDispatcher) {
-        advanceUntilIdle()
-        viewModel.updateState { state ->
+        val initialState = ProductState().let { state ->
             state.copy(
                 user = state.user.copy(
                     gameStates = mapOf(
@@ -184,13 +232,16 @@ class PlayfitViewModelTest {
                 ),
             )
         }
+        coEvery { repository.getState() } returns success(initialState)
+        val model = newViewModel()
+        advanceUntilIdle()
 
-        viewModel.togglePick("game1")
+        model.togglePick("game1")
         advanceUntilIdle()
 
         coVerify(exactly = 0) { repository.togglePick("game1", true) }
-        assertTrue(viewModel.picks.value.isEmpty())
-        assertNotNull(viewModel.ui.value.toast)
+        assertTrue(model.picks.value.isEmpty())
+        assertNotNull(model.ui.value.toast)
     }
 
     @Test
@@ -245,13 +296,17 @@ class PlayfitViewModelTest {
     }
 
     @Test
-    fun `searchGames returns empty list on error`() = runTest(testDispatcher) {
+    fun `searchGames surfaces error to caller`() = runTest(testDispatcher) {
         coEvery { repository.searchGames(any(), any()) } returns RepositoryResult.Failure(
             RepositoryError.Network("API error"),
         )
 
-        val result = viewModel.searchGames("game")
-        assertTrue(result.isEmpty())
+        try {
+            viewModel.searchGames("game")
+            org.junit.Assert.fail("Expected searchGames to throw")
+        } catch (error: IllegalStateException) {
+            assertEquals("API error", error.message)
+        }
         assertEquals("API error", viewModel.ui.value.error)
     }
 
@@ -350,9 +405,8 @@ class PlayfitViewModelTest {
 
     @Test
     fun `platform changes update product state and persist full onboarding`() = runTest(testDispatcher) {
-        advanceUntilIdle()
         val draft = validOnboardingDraft()
-        viewModel.updateState { current ->
+        val initialState = ProductState().let { current ->
             current.copy(
                 user = current.user.copy(
                     onboarding = draft,
@@ -360,13 +414,16 @@ class PlayfitViewModelTest {
                 ),
             )
         }
+        coEvery { repository.getState() } returns success(initialState)
+        val model = newViewModel()
+        advanceUntilIdle()
 
-        viewModel.updatePlatforms(setOf("ps5", "pc"))
+        model.updatePlatforms(setOf("ps5", "pc"))
         advanceUntilIdle()
 
         assertEquals(
             setOf("ps5", "pc"),
-            viewModel.state.value.user.onboarding.platforms.map { it.platformId }.toSet(),
+            model.state.value.user.onboarding.platforms.map { it.platformId }.toSet(),
         )
         coVerify { preferencesDataStore.setSelectedPlatformIds(setOf("ps5", "pc")) }
         coVerify {
@@ -409,9 +466,8 @@ class PlayfitViewModelTest {
 
     @Test
     fun `deleting onboarding signal updates draft and persists deletion`() = runTest(testDispatcher) {
-        advanceUntilIdle()
         val draft = validOnboardingDraft()
-        viewModel.updateState { current ->
+        val initialState = ProductState().let { current ->
             current.copy(
                 user = current.user.copy(
                     onboarding = draft,
@@ -420,12 +476,15 @@ class PlayfitViewModelTest {
                 ),
             )
         }
-
-        viewModel.deleteSignal("a", "onboarding_liked")
+        coEvery { repository.getState() } returns success(initialState)
+        val model = newViewModel()
         advanceUntilIdle()
 
-        assertFalse("a" in viewModel.state.value.user.onboarding.likedGameIds)
-        assertFalse("a" in viewModel.state.value.user.gameStates)
+        model.deleteSignal("a", "onboarding_liked")
+        advanceUntilIdle()
+
+        assertFalse("a" in model.state.value.user.onboarding.likedGameIds)
+        assertFalse("a" in model.state.value.user.gameStates)
         coVerify { repository.deleteGameState("a") }
         coVerify {
             repository.rebuildTasteProfile(
@@ -437,19 +496,21 @@ class PlayfitViewModelTest {
 
     @Test
     fun `reset taste clears product data without signing out`() = runTest(testDispatcher) {
-        advanceUntilIdle()
-        viewModel.updateState { current ->
+        val initialState = ProductState().let { current ->
             current.copy(user = current.user.copy(profile = ProductProfile(summary = "Known")))
         }
+        coEvery { repository.getState() } returns success(initialState)
+        val model = newViewModel()
+        advanceUntilIdle()
 
-        viewModel.resetTaste()
+        model.resetTaste()
         advanceUntilIdle()
 
         coVerify { repository.resetTaste() }
-        coVerify(exactly = 0) { repository.signOut() }
-        assertTrue(viewModel.state.value.user.gameStates.isEmpty())
-        assertTrue(viewModel.state.value.user.profile == null)
-        assertFalse(viewModel.onboardingCompleted.value)
+        coVerify(exactly = 0) { authManager.signOut() }
+        assertTrue(model.state.value.user.gameStates.isEmpty())
+        assertTrue(model.state.value.user.profile == null)
+        assertFalse(model.onboardingCompleted.value)
     }
 
     private fun recommendation(gameId: String) = RankedSeedGame(
@@ -468,6 +529,9 @@ class PlayfitViewModelTest {
         likedGameIds = listOf("a", "b", "c"),
         dislikedGameIds = listOf("miss"),
     )
+
+    private fun newViewModel(): PlayfitViewModel =
+        PlayfitViewModel(repository, authManager, preferencesDataStore)
 
     private fun <T> success(
         value: T,

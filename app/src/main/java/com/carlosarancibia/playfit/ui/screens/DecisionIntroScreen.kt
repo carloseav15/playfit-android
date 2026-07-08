@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,7 +47,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
@@ -59,11 +57,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.SeedGame
+import com.carlosarancibia.playfit.ui.components.design.CompassIcon
 import com.carlosarancibia.playfit.ui.components.design.GlowBackground
+import com.carlosarancibia.playfit.ui.components.design.LoginIcon
+import com.carlosarancibia.playfit.ui.components.design.MoonIcon
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
+import com.carlosarancibia.playfit.ui.components.design.SparklesIcon
+import com.carlosarancibia.playfit.ui.components.design.SunIcon
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
+import com.carlosarancibia.playfit.ui.components.ThemePickerButton
 
 private val mockGameId = "mock-hades"
 private val mockGameTitle = "Hades"
@@ -479,140 +483,6 @@ fun DecisionIntroScreen(
     }
 }
 
-// ── Programmatic Sparkles Icon Composable ──
-@Composable
-fun SparklesIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val path = Path().apply {
-            moveTo(w / 2f, 0f)
-            quadraticTo(w / 2f, h / 2f, w, h / 2f)
-            quadraticTo(w / 2f, h / 2f, w / 2f, h)
-            quadraticTo(w / 2f, h / 2f, 0f, h / 2f)
-            quadraticTo(w / 2f, h / 2f, w / 2f, 0f)
-            close()
-        }
-        drawPath(path = path, color = color)
-    }
-}
-
-// ── Programmatic Sun Icon Composable ──
-@Composable
-fun SunIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val center = androidx.compose.ui.geometry.Offset(w / 2f, h / 2f)
-        val radius = w * 0.25f
-        drawCircle(color = color, radius = radius, center = center)
-        val rayLength = w * 0.12f
-        val rayThickness = w * 0.06f
-        for (i in 0 until 8) {
-            val angle = i * Math.PI / 4
-            val startX = (w / 2f + Math.cos(angle) * (radius + 2.dp.toPx())).toFloat()
-            val startY = (h / 2f + Math.sin(angle) * (radius + 2.dp.toPx())).toFloat()
-            val endX = (w / 2f + Math.cos(angle) * (radius + 2.dp.toPx() + rayLength)).toFloat()
-            val endY = (h / 2f + Math.sin(angle) * (radius + 2.dp.toPx() + rayLength)).toFloat()
-            drawLine(
-                color = color,
-                start = androidx.compose.ui.geometry.Offset(startX, startY),
-                end = androidx.compose.ui.geometry.Offset(endX, endY),
-                strokeWidth = rayThickness,
-                cap = androidx.compose.ui.graphics.StrokeCap.Round
-            )
-        }
-    }
-}
-
-// ── Programmatic Moon Icon Composable ──
-@Composable
-fun MoonIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val path = Path().apply {
-            moveTo(w * 0.35f, h * 0.15f)
-            cubicTo(w * 0.85f, h * 0.15f, w * 0.85f, h * 0.85f, w * 0.35f, h * 0.85f)
-            cubicTo(w * 0.65f, h * 0.70f, w * 0.65f, h * 0.30f, w * 0.35f, h * 0.15f)
-            close()
-        }
-        drawPath(path = path, color = color)
-    }
-}
-
-// ── Programmatic Compass Icon Composable ──
-@Composable
-fun CompassIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val center = androidx.compose.ui.geometry.Offset(w / 2f, h / 2f)
-        val radius = w * 0.42f
-        drawCircle(
-            color = color,
-            radius = radius,
-            center = center,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = w * 0.08f)
-        )
-        val needlePath = Path().apply {
-            moveTo(w / 2f, h * 0.23f)
-            lineTo(w * 0.64f, h / 2f)
-            lineTo(w / 2f, h * 0.77f)
-            lineTo(w * 0.36f, h / 2f)
-            close()
-        }
-        drawPath(path = needlePath, color = color)
-        drawLine(
-            color = color.copy(alpha = 0.5f),
-            start = androidx.compose.ui.geometry.Offset(w / 2f, h * 0.23f),
-            end = androidx.compose.ui.geometry.Offset(w / 2f, h * 0.77f),
-            strokeWidth = w * 0.04f
-        )
-    }
-}
-
-// ── Programmatic Login Icon Composable ──
-@Composable
-fun LoginIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val bracketPath = Path().apply {
-            moveTo(w * 0.70f, h * 0.15f)
-            lineTo(w * 0.40f, h * 0.15f)
-            lineTo(w * 0.40f, h * 0.35f)
-            moveTo(w * 0.40f, h * 0.65f)
-            lineTo(w * 0.40f, h * 0.85f)
-            lineTo(w * 0.70f, h * 0.85f)
-        }
-        drawPath(
-            path = bracketPath,
-            color = color,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(
-                width = w * 0.08f,
-                cap = androidx.compose.ui.graphics.StrokeCap.Round
-            )
-        )
-        val arrowPath = Path().apply {
-            moveTo(w * 0.15f, h / 2f)
-            lineTo(w * 0.60f, h / 2f)
-            moveTo(w * 0.43f, h * 0.33f)
-            lineTo(w * 0.60f, h / 2f)
-            lineTo(w * 0.43f, h * 0.67f)
-        }
-        drawPath(
-            path = arrowPath,
-            color = color,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(
-                width = w * 0.08f,
-                cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                join = androidx.compose.ui.graphics.StrokeJoin.Round
-            )
-        )
-    }
-}
-
 // ── Preview Signal Row ──
 @Composable
 private fun PreviewSignalRow(
@@ -668,78 +538,4 @@ private fun PreviewSignalRow(
     }
 }
 
-// ── Theme Picker Button ──
-@Composable
-private fun ThemePickerButton(
-    currentTheme: String,
-    onThemeChange: (String) -> Unit,
-) {
-    var expanded by remember { mutableStateOf(false) }
 
-    Box {
-        IconButton(onClick = { expanded = true }) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow),
-                contentAlignment = Alignment.Center,
-            ) {
-                when (currentTheme) {
-                    "light" -> SunIcon(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    "dark" -> MoonIcon(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    else -> Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "System theme selection",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            DropdownMenuItem(
-                leadingIcon = { SunIcon(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                text = {
-                    Text(
-                        "Light",
-                        fontWeight = if (currentTheme == "light") FontWeight.Bold else FontWeight.Normal,
-                    )
-                },
-                onClick = {
-                    onThemeChange("light")
-                    expanded = false
-                },
-            )
-            DropdownMenuItem(
-                leadingIcon = { MoonIcon(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                text = {
-                    Text(
-                        "Dark",
-                        fontWeight = if (currentTheme == "dark") FontWeight.Bold else FontWeight.Normal,
-                    )
-                },
-                onClick = {
-                    onThemeChange("dark")
-                    expanded = false
-                },
-            )
-            DropdownMenuItem(
-                leadingIcon = { Icon(Icons.Default.Settings, null, modifier = Modifier.size(18.dp)) },
-                text = {
-                    Text(
-                        "System",
-                        fontWeight = if (currentTheme == "system") FontWeight.Bold else FontWeight.Normal,
-                    )
-                },
-                onClick = {
-                    onThemeChange("system")
-                    expanded = false
-                },
-            )
-        }
-    }
-}

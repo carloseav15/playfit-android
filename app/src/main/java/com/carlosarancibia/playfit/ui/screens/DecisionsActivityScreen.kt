@@ -76,6 +76,14 @@ private fun formatDate(isoDate: String?): String {
     } catch (_: Exception) { "Baseline" }
 }
 
+internal val playedChangeSignalOptions = listOf(
+    "Loved" to ProductDecisionFeedback.PlayedLoved,
+    "Liked" to ProductDecisionFeedback.PlayedLiked,
+    "Mixed" to ProductDecisionFeedback.PlayedMixed,
+    "Dropped" to ProductDecisionFeedback.PlayedDropped,
+    "Not For Me" to ProductDecisionFeedback.NotForMe,
+)
+
 @Composable
 fun DecisionsActivityContent(
     tasteModel: ProductTasteModel?,
@@ -202,7 +210,7 @@ private fun ActivityRow(
         PlayfitCoverArt(
             gameId = entry.gameId,
             title = entry.title,
-            coverUrl = null,
+            coverUrl = entry.coverUrl,
             modifier = Modifier
                 .width(44.dp)
                 .height(60.dp),
@@ -342,14 +350,6 @@ private fun ChangeSignalSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
-    val changeOptions = listOf(
-        "Loved" to ProductDecisionFeedback.Loved,
-        "Liked" to ProductDecisionFeedback.Liked,
-        "Mixed" to ProductDecisionFeedback.Mixed,
-        "Dropped" to ProductDecisionFeedback.PlayedDropped,
-        "Not For Me" to ProductDecisionFeedback.NotForMe,
-    )
-
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -376,7 +376,7 @@ private fun ChangeSignalSheet(
             )
             Spacer(Modifier.height(PlayfitSpacing.lg))
 
-            changeOptions.forEach { (label, feedback) ->
+            playedChangeSignalOptions.forEach { (label, feedback) ->
                 TextButton(
                     onClick = {
                         onSelect(feedback)

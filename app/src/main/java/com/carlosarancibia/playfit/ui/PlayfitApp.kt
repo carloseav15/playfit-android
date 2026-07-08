@@ -54,6 +54,9 @@ import androidx.navigation.navArgument
 import com.carlosarancibia.playfit.model.ProductOnboardingDraft
 import com.carlosarancibia.playfit.model.ProductPlayNextModel
 import com.carlosarancibia.playfit.model.ProductProfile
+import com.carlosarancibia.playfit.model.ProductGameState
+import com.carlosarancibia.playfit.model.ProductTasteHistoryEntry
+import com.carlosarancibia.playfit.model.ProductTasteModel
 import com.carlosarancibia.playfit.ui.components.design.GlowBackground
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.screens.AuthScreen
@@ -70,6 +73,7 @@ import com.carlosarancibia.playfit.ui.screens.SplashScreen
 import com.carlosarancibia.playfit.ui.screens.GameNode
 import com.carlosarancibia.playfit.ui.screens.NodeType
 import com.carlosarancibia.playfit.ui.screens.TasteMapVisualizerScreen
+import com.carlosarancibia.playfit.ui.screens.buildMapNodes
 import com.carlosarancibia.playfit.ui.screens.TasteScreen
 import com.carlosarancibia.playfit.ui.screens.calculateGameCoordinates
 import com.carlosarancibia.playfit.ui.viewmodel.PlayfitViewModel
@@ -77,6 +81,7 @@ import com.carlosarancibia.playfit.ui.viewmodel.DossierUiState
 import com.carlosarancibia.playfit.model.ProductPlatformSelection
 import com.carlosarancibia.playfit.model.ProductAccessStatus
 import com.carlosarancibia.playfit.model.RankedSeedGame
+import com.carlosarancibia.playfit.model.SeedGame
 import com.carlosarancibia.playfit.model.ProductState
 import com.carlosarancibia.playfit.data.auth.AuthResult
 
@@ -107,6 +112,8 @@ fun PlayfitApp(
     val uiState by viewModel.ui.collectAsState()
     val playNext by viewModel.playNext.collectAsState()
     val picks by viewModel.picks.collectAsState()
+    val platforms by viewModel.platforms.collectAsState()
+    val platformsUi by viewModel.platformsUi.collectAsState()
     val productState by viewModel.state.collectAsState()
     val onboardingCompleted by viewModel.onboardingCompleted.collectAsState()
     val authState by viewModel.authState.collectAsState()
@@ -177,7 +184,10 @@ fun PlayfitApp(
         ) {
             if (!showOnboarding) {
                 DecisionIntroScreen(
-                    onStartCalibration = { showOnboarding = true },
+                    onStartCalibration = {
+                        viewModel.resetOnboardingState()
+                        showOnboarding = true
+                    },
                     onSignIn = { showAuth = true },
                     themeMode = themeMode,
                     onThemeChange = { viewModel.setThemeMode(it) },
@@ -185,6 +195,7 @@ fun PlayfitApp(
                 )
             } else {
                 OnboardingScreen(
+                    viewModel = viewModel,
                     onComplete = { platforms, liked, disliked ->
                         val draft = ProductOnboardingDraft(
                             platforms = platforms.map { p ->
@@ -199,6 +210,7 @@ fun PlayfitApp(
                         viewModel.completeOnboarding(draft)
                     },
                     onCancel = { showOnboarding = false },
+                    platforms = platforms,
                     onSearchGames = { query -> viewModel.searchGames(query) },
                 )
             }
@@ -266,33 +278,38 @@ fun PlayfitApp(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        // Sync status bar
-        if (uiState.refreshing || uiState.saving || uiState.pendingSync || uiState.showingStaleData) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                    .padding(horizontal = PlayfitSpacing.md, vertical = 7.dp),
-            ) {
-                Text(
-                    text = when {
-                        uiState.refreshing -> "Syncing changes\u2026"
-                        uiState.saving -> "Saving\u2026"
-                        uiState.pendingSync -> "Changes saved on this device; waiting to sync"
-                        else -> "Showing saved data; pull to refresh"
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-        }
-
-        NavHost(
-            navController = navController,
-            startDestination = "play-next",
-            modifier = Modifier.padding(padding),
+        androidx.compose.foundation.layout.Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
         ) {
+            // Sync status bar
+            if (uiState.refreshing || uiState.saving || uiState.pendingSync || uiState.showingStaleData) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                        .padding(horizontal = PlayfitSpacing.md, vertical = 7.dp),
+                ) {
+                    Text(
+                        text = when {
+                            uiState.refreshing -> "Syncing changes\u2026"
+                            uiState.saving -> "Saving\u2026"
+                            uiState.pendingSync -> "Changes saved on this device; waiting to sync"
+                            else -> "Showing saved data; pull to refresh"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+
+            NavHost(
+                navController = navController,
+                startDestination = "play-next",
+                modifier = Modifier.weight(1f),
+            ) {
             composable(
                 "play-next",
                 enterTransition = { slideInHorizontally { it } },
@@ -316,10 +333,11 @@ fun PlayfitApp(
             ) {
                 PicksScreen(
                     picks = picks,
+                    uiState = uiState,
                     viewModel = viewModel,
                     onOpenGame = { gameId -> navController.navigate("game/$gameId") },
                     onNavigateToPlayNext = { navController.navigate("play-next") { popUpTo(0) { inclusive = true } } },
-                    hasProfile = productState.user.profile != null,
+                    hasProfile = onboardingCompleted,
                 )
             }
             composable(
@@ -334,6 +352,11 @@ fun PlayfitApp(
                 TasteScreen(
                     profile = profile ?: ProductProfile(),
                     tasteModel = tasteModel,
+                    hasProfile = onboardingCompleted,
+                    isLoading = uiState.loading,
+                    error = uiState.error,
+                    showingStaleData = uiState.showingStaleData,
+                    pendingSync = uiState.pendingSync,
                     onOpenGame = { gameId -> navController.navigate("game/$gameId") },
                     onOpenMap = { navController.navigate("taste-map") },
                     onRemovePick = { viewModel.removePick(it) },
@@ -354,7 +377,11 @@ fun PlayfitApp(
             ) {
                 SettingsScreen(
                     viewModel = viewModel,
-                    hasProfile = productState.user.profile != null,
+                    platforms = platforms,
+                    platformsLoading = platformsUi.loading,
+                    platformsError = platformsUi.error,
+                    platformsStale = platformsUi.showingStaleData,
+                    hasProfile = onboardingCompleted || productState.user.onboardingCompletedAt != null,
                     onResetTaste = {
                         viewModel.resetTaste()
                     },
@@ -385,13 +412,23 @@ fun PlayfitApp(
                         )
                     } else GameDossierLoading()
                     is DossierUiState.NotFound -> if (current.gameId == gameId) {
-                        GameDossierNotFound(onBack = { navController.popBackStack() })
+                        GameDossierNotFound(
+                            onBack = {
+                                navController.navigate("play-next") {
+                                    popUpTo("play-next") { inclusive = true }
+                                }
+                            },
+                        )
                     } else GameDossierLoading()
                     is DossierUiState.Error -> if (current.gameId == gameId) {
                         GameDossierError(
                             message = current.message,
                             onRetry = { viewModel.loadGameRecommendation(gameId, forceRefresh = true) },
-                            onBack = { navController.popBackStack() },
+                            onBack = {
+                                navController.navigate("play-next") {
+                                    popUpTo("play-next") { inclusive = true }
+                                }
+                            },
                         )
                     } else GameDossierLoading()
                     DossierUiState.Idle,
@@ -405,11 +442,13 @@ fun PlayfitApp(
                 popEnterTransition = { slideInHorizontally { -it } },
                 popExitTransition = { slideOutHorizontally { it } },
             ) {
-                val nodes = remember(productState, picks, playNext) {
+                val tasteModel by viewModel.tasteModel.collectAsState()
+                val nodes = remember(productState, picks, playNext, tasteModel) {
                     buildMapNodes(
                         state = productState,
                         picks = picks,
                         playNext = playNext,
+                        tasteModel = tasteModel,
                     )
                 }
                 TasteMapVisualizerScreen(
@@ -420,94 +459,5 @@ fun PlayfitApp(
         }
     }
 }
-
-private fun buildMapNodes(
-    state: ProductState,
-    picks: List<RankedSeedGame>,
-    playNext: ProductPlayNextModel?,
-): List<GameNode> {
-    val nodes = mutableListOf<GameNode>()
-    val seenIds = mutableSetOf<String>()
-
-    // 1. Include all picks
-    for (entry in picks) {
-        val game = entry.game
-        val (x, y) = calculateGameCoordinates(game.tags, game.primaryGenre, game.gameId)
-        nodes.add(
-            GameNode(
-                id = game.gameId,
-                title = game.title,
-                x = x,
-                y = y,
-                type = NodeType.Liked,
-                coverUrl = game.externalCoverUrl,
-            )
-        )
-        seenIds.add(game.gameId)
-    }
-
-    // 2. Include all game states with signals
-    val gameStates = state.user.gameStates
-    for ((gameId, gs) in gameStates) {
-        if (gameId in seenIds) continue
-
-        // Classify the node based on game state
-        val type = when {
-            gs.excluded -> NodeType.Avoided
-            gs.rating != null && gs.rating!! >= 4.0 -> NodeType.Liked
-            gs.inPlayfitPicks -> NodeType.Liked
-            else -> NodeType.Pending
-        }
-
-        val (x, y) = calculateGameCoordinates(emptyList(), "", gameId)
-        nodes.add(
-            GameNode(
-                id = gameId,
-                title = gs.title.ifEmpty { gameId },
-                x = x,
-                y = y,
-                type = type,
-                coverUrl = null,
-            )
-        )
-        seenIds.add(gameId)
-    }
-
-    // 3. Include primary recommendation
-    val primary = playNext?.primary
-    if (primary != null && primary.game.gameId !in seenIds) {
-        val game = primary.game
-        val (x, y) = calculateGameCoordinates(game.tags, game.primaryGenre, game.gameId)
-        nodes.add(
-            GameNode(
-                id = game.gameId,
-                title = game.title,
-                x = x,
-                y = y,
-                type = if (primary.affinityScore >= 70) NodeType.Liked else NodeType.Pending,
-                coverUrl = game.externalCoverUrl,
-            )
-        )
-        seenIds.add(game.gameId)
-    }
-
-    // 4. Include alternatives not already included
-    for (alt in (playNext?.alternatives ?: emptyList())) {
-        if (alt.game.gameId in seenIds) continue
-        val game = alt.game
-        val (x, y) = calculateGameCoordinates(game.tags, game.primaryGenre, game.gameId)
-        nodes.add(
-            GameNode(
-                id = game.gameId,
-                title = game.title,
-                x = x,
-                y = y,
-                type = NodeType.Pending,
-                coverUrl = game.externalCoverUrl,
-            )
-        )
-        seenIds.add(game.gameId)
-    }
-
-    return nodes
 }
+

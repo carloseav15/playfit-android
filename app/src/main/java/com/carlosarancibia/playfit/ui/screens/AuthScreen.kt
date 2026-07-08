@@ -337,7 +337,7 @@ fun AuthScreen(
                     Spacer(Modifier.height(PlayfitSpacing.md))
 
                     Text(
-                        text = "Guest profiles store choices locally in your browser cache. Creating an account allows you to backup and sync recommendations.",
+                        text = "Guest profiles save choices on this device. Creating an account lets you back up and sync recommendations.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center,

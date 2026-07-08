@@ -26,6 +26,7 @@ junit = "4.13.2"
 mockk = "1.13.12"
 coroutinesTest = "1.8.1"
 turbine = "1.1.0"
+androidxTestRunner = "1.6.2"
 
 [libraries]
 # Existing
@@ -85,6 +86,9 @@ junit = { module = "junit:junit", version.ref = "junit" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

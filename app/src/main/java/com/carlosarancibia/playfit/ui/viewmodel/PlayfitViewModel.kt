@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.carlosarancibia.playfit.data.PlayfitRepository
 import com.carlosarancibia.playfit.data.RepositoryError
 import com.carlosarancibia.playfit.data.RepositoryResult
+import com.carlosarancibia.playfit.data.fold
 import com.carlosarancibia.playfit.data.auth.AuthManager
 import com.carlosarancibia.playfit.data.auth.AuthResult
 import com.carlosarancibia.playfit.data.local.PreferencesDataStore
@@ -18,8 +19,10 @@ import com.carlosarancibia.playfit.model.ProductPlayNextModel
 import com.carlosarancibia.playfit.model.ProductPlayStatus
 import com.carlosarancibia.playfit.model.ProductState
 import com.carlosarancibia.playfit.model.ProductTasteModel
+import com.carlosarancibia.playfit.model.Platform
 import com.carlosarancibia.playfit.model.RankedSeedGame
 import com.carlosarancibia.playfit.model.SeedGame
+import com.carlosarancibia.playfit.model.fallbackPlatforms
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -40,10 +43,10 @@ data class PlayfitUiState(
     val pendingSync: Boolean = false,
 )
 
-data class AuthState(
-    val isAuthenticated: Boolean = false,
-    val isAnonymous: Boolean = false,
-    val userId: String? = null,
+data class PlatformsUiState(
+    val loading: Boolean = false,
+    val error: String? = null,
+    val showingStaleData: Boolean = false,
 )
 
 sealed interface DossierUiState {
@@ -67,8 +70,19 @@ class PlayfitViewModel @Inject constructor(
     private val _ui = MutableStateFlow(PlayfitUiState())
     val ui: StateFlow<PlayfitUiState> = _ui.asStateFlow()
 
-    private val _authState = MutableStateFlow(AuthState())
-    val authState: StateFlow<AuthState> = _authState.asStateFlow()
+    private val authCoordinator = AuthCoordinator(
+        authManager = authManager,
+        scope = viewModelScope,
+        setToast = ::setToast,
+        setError = { message -> _ui.value = _ui.value.copy(error = message) },
+    )
+    val authState: StateFlow<AuthState> = authCoordinator.state
+
+    private val playNextQueueCoordinator = PlayNextQueueCoordinator()
+    private val initialDataCoordinator = InitialDataCoordinator(
+        repository = repository,
+        preferencesDataStore = preferencesDataStore,
+    )
 
     private val _playNext = MutableStateFlow<ProductPlayNextModel?>(null)
     val playNext: StateFlow<ProductPlayNextModel?> = _playNext.asStateFlow()
@@ -78,6 +92,12 @@ class PlayfitViewModel @Inject constructor(
 
     private val _tasteModel = MutableStateFlow<ProductTasteModel?>(null)
     val tasteModel: StateFlow<ProductTasteModel?> = _tasteModel.asStateFlow()
+
+    private val _platforms = MutableStateFlow(fallbackPlatforms)
+    val platforms: StateFlow<List<Platform>> = _platforms.asStateFlow()
+
+    private val _platformsUi = MutableStateFlow(PlatformsUiState())
+    val platformsUi: StateFlow<PlatformsUiState> = _platformsUi.asStateFlow()
 
     private val _dossier = MutableStateFlow<DossierUiState>(DossierUiState.Idle)
     val dossier: StateFlow<DossierUiState> = _dossier.asStateFlow()
@@ -91,10 +111,31 @@ class PlayfitViewModel @Inject constructor(
     private val _excludedIds = MutableStateFlow<Set<String>>(emptySet())
     val excludedIds: StateFlow<Set<String>> = _excludedIds.asStateFlow()
 
+    private val _selectedPlatformIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedPlatformIds: StateFlow<Set<String>> = _selectedPlatformIds.asStateFlow()
+
+    // Onboarding temporary states (survive layout changes / recreation)
+    val onboardingStep = MutableStateFlow(0)
+    val onboardingSelectedPlatforms = MutableStateFlow(setOf<String>())
+    val onboardingLikedGames = MutableStateFlow(listOf<SeedGame?>(null, null, null))
+    val onboardingDislikedGames = MutableStateFlow(listOf<SeedGame?>(null))
+
+    fun resetOnboardingState() {
+        onboardingStep.value = 0
+        onboardingSelectedPlatforms.value = emptySet()
+        onboardingLikedGames.value = listOf(null, null, null)
+        onboardingDislikedGames.value = listOf(null)
+    }
+
     private var saveJob: Job? = null
     private var platformSaveJob: Job? = null
 
     init {
+        viewModelScope.launch {
+            preferencesDataStore.selectedPlatformIds.collect { ids ->
+                _selectedPlatformIds.value = ids
+            }
+        }
         viewModelScope.launch {
             preferencesDataStore.onboardingCompleted.collect { completed ->
                 _onboardingCompleted.value = completed
@@ -105,15 +146,7 @@ class PlayfitViewModel @Inject constructor(
                 _themeMode.value = mode
             }
         }
-        viewModelScope.launch {
-            authManager.session.collect { session ->
-                _authState.value = AuthState(
-                    isAuthenticated = session != null,
-                    isAnonymous = session?.isAnonymous == true,
-                    userId = session?.userId,
-                )
-            }
-        }
+        authCoordinator.observeSession()
         viewModelScope.launch {
             repository.observePendingSync().collect { pending ->
                 _ui.value = _ui.value.copy(pendingSync = pending)
@@ -125,118 +158,54 @@ class PlayfitViewModel @Inject constructor(
     }
 
     private suspend fun initializeSessionAndData() {
-        val restored = try {
-            authManager.restoreSession()
-        } catch (_: Exception) {
-            null
-        }
-        if (restored == null) {
-            when (val result = authManager.signInAnonymously()) {
-                is AuthResult.Error -> _ui.value = _ui.value.copy(error = result.message)
-                is AuthResult.Pending -> setToast(result.message)
-                is AuthResult.Success -> Unit
-            }
-        }
+        authCoordinator.restoreOrCreateAnonymousSession()
         loadInitialData()
     }
 
     private suspend fun loadInitialData() {
         _ui.value = _ui.value.copy(loading = true)
-        val failures = mutableListOf<String>()
-        var stale = false
-
-        when (val result = safeRepositoryCall { repository.getState() }) {
-            is RepositoryResult.Success -> {
-                _state.value = result.data
-                val platformIds = result.data.user.onboarding.platforms.map { it.platformId }.toSet()
-                if (platformIds.isNotEmpty()) {
-                    preferencesDataStore.setSelectedPlatformIds(platformIds)
-                }
-                stale = stale || result.isStale
-            }
-            is RepositoryResult.Failure -> failures += result.error.message
-        }
-        when (val result = safeRepositoryCall { repository.getTodayRecommendations() }) {
-            is RepositoryResult.Success -> {
-                _playNext.value = result.data
-                stale = stale || result.isStale
-            }
-            is RepositoryResult.Failure -> failures += result.error.message
-        }
-        when (val result = safeRepositoryCall { repository.getPicks() }) {
-            is RepositoryResult.Success -> {
-                _picks.value = result.data
-                stale = stale || result.isStale
-            }
-            is RepositoryResult.Failure -> failures += result.error.message
-        }
-        when (val result = safeRepositoryCall { repository.getTasteModel() }) {
-            is RepositoryResult.Success -> {
-                _tasteModel.value = result.data
-                stale = stale || result.isStale
-            }
-            is RepositoryResult.Failure -> failures += result.error.message
-        }
+        _platformsUi.value = _platformsUi.value.copy(loading = true, error = null)
+        val snapshot = initialDataCoordinator.load()
+        snapshot.state?.let { _state.value = it }
+        snapshot.playNext?.let { _playNext.value = it }
+        snapshot.picks?.let { _picks.value = it }
+        snapshot.tasteModel?.let { _tasteModel.value = it }
+        _platforms.value = snapshot.platforms
+        _platformsUi.value = snapshot.platformsUi
         _ui.value = _ui.value.copy(
             loading = false,
-            error = failures.firstOrNull(),
-            showingStaleData = stale,
+            error = snapshot.error,
+            showingStaleData = snapshot.showingStaleData,
         )
     }
 
     fun linkGoogleAccount() {
-        viewModelScope.launch {
-            when (val result = authManager.linkGoogleIdentity()) {
-                is AuthResult.Success -> setToast("Google account linked.")
-                is AuthResult.Pending -> setToast(result.message)
-                is AuthResult.Error -> setToast(result.message)
-            }
-        }
+        authCoordinator.linkGoogleAccount()
     }
 
     fun signOutAsync() {
-        viewModelScope.launch {
-            when (val result = repository.signOut()) {
-                is AuthResult.Error -> setToast(result.message)
-                is AuthResult.Pending -> setToast(result.message)
-                is AuthResult.Success -> setToast("Signed out.")
-            }
-        }
+        authCoordinator.signOutAsync()
     }
 
     fun deleteAccount() {
-        viewModelScope.launch {
-            when (val result = repository.deleteAccount()) {
-                is AuthResult.Error -> setToast(result.message)
-                is AuthResult.Pending -> setToast(result.message)
-                is AuthResult.Success -> setToast("Account deleted.")
-            }
-        }
+        authCoordinator.deleteAccount()
     }
 
-    suspend fun signInAnonymously(): AuthResult = authManager.signInAnonymously()
+    suspend fun signInAnonymously(): AuthResult = authCoordinator.signInAnonymously()
 
-    suspend fun signInWithGoogle(): AuthResult {
-        return authManager.signInWithGoogle()
-    }
+    suspend fun signInWithGoogle(): AuthResult = authCoordinator.signInWithGoogle()
 
-    suspend fun signInWithEmail(email: String, password: String): AuthResult {
-        return authManager.signInWithEmail(email, password)
-    }
+    suspend fun signInWithEmail(email: String, password: String): AuthResult =
+        authCoordinator.signInWithEmail(email, password)
 
-    suspend fun signUpWithEmail(email: String, password: String): AuthResult {
-        return authManager.signUpWithEmail(email, password)
-    }
+    suspend fun signUpWithEmail(email: String, password: String): AuthResult =
+        authCoordinator.signUpWithEmail(email, password)
 
-    suspend fun resetPassword(email: String): AuthResult {
-        return repository.resetPassword(email)
-    }
+    suspend fun resetPassword(email: String): AuthResult = authCoordinator.resetPassword(email)
 
-    suspend fun signInAsGuest(): AuthResult {
-        return authManager.signInAnonymously()
-    }
+    suspend fun signInAsGuest(): AuthResult = authCoordinator.signInAsGuest()
 
-    suspend fun signOut(): AuthResult = authManager.signOut()
+    suspend fun signOut(): AuthResult = authCoordinator.signOut()
 
     fun completeOnboarding(draft: ProductOnboardingDraft? = null) {
         viewModelScope.launch {
@@ -261,17 +230,15 @@ class PlayfitViewModel @Inject constructor(
             preferencesDataStore.setSelectedPlatformIds(
                 completedDraft.platforms.map { it.platformId }.toSet(),
             )
-            when (val result = safeRepositoryCall {
-                repository.saveOnboarding(completedDraft, completedAt)
-            }) {
-                is RepositoryResult.Failure -> {
-                    _ui.value = _ui.value.copy(error = result.error.message)
+            safeRepositoryCall { repository.saveOnboarding(completedDraft, completedAt) }.fold(
+                onFailure = { error ->
+                    _ui.value = _ui.value.copy(error = error.message)
                     return@launch
-                }
-                is RepositoryResult.Success -> {
+                },
+                onSuccess = { result ->
                     _ui.value = _ui.value.copy(pendingSync = result.pendingSync)
-                }
-            }
+                },
+            )
             preferencesDataStore.setOnboardingCompleted(true)
             _onboardingCompleted.value = true
             loadInitialData()
@@ -306,37 +273,36 @@ class PlayfitViewModel @Inject constructor(
         platformSaveJob?.cancel()
         platformSaveJob = viewModelScope.launch {
             delay(500)
-            when (val result = safeRepositoryCall {
-                repository.saveOnboarding(draft, _state.value.user.onboardingCompletedAt)
-            }) {
-                is RepositoryResult.Failure -> _ui.value = _ui.value.copy(error = result.error.message)
-                is RepositoryResult.Success -> {
+            safeRepositoryCall { repository.saveOnboarding(draft, _state.value.user.onboardingCompletedAt) }.fold(
+                onFailure = { error -> _ui.value = _ui.value.copy(error = error.message) },
+                onSuccess = { result ->
                     _ui.value = _ui.value.copy(pendingSync = result.pendingSync)
                     setToast(if (result.pendingSync) "Platforms saved; waiting to sync" else "Platforms updated")
                     if (!result.pendingSync) refreshRecommendations()
-                }
-            }
+                },
+            )
         }
     }
 
     fun refreshRecommendations() {
         viewModelScope.launch {
             _ui.value = _ui.value.copy(refreshing = true)
-            when (val result = safeRepositoryCall { repository.refreshRecommendations() }) {
-                is RepositoryResult.Failure -> {
-                    _ui.value = _ui.value.copy(refreshing = false, error = result.error.message)
-                }
-                is RepositoryResult.Success -> {
+            val previousStateVersion = _playNext.value?.stateVersion
+            safeRepositoryCall { repository.refreshRecommendations() }.fold(
+                onFailure = { error ->
+                    _ui.value = _ui.value.copy(refreshing = false, error = error.message)
+                },
+                onSuccess = { result ->
                     _playNext.value = result.data
                     _ui.value = _ui.value.copy(
                         refreshing = false,
                         showingStaleData = result.isStale,
                         error = null,
                     )
-                    refreshSecondaryData()
+                    refreshSecondaryData(includeState = previousStateVersion != result.data.stateVersion)
                     setToast(if (result.isStale) "Showing saved recommendations" else "Recommendations updated")
-                }
-            }
+                },
+            )
         }
     }
 
@@ -367,15 +333,14 @@ class PlayfitViewModel @Inject constructor(
         }
         viewModelScope.launch {
             _dossier.value = DossierUiState.Loading(gameId)
-            when (val result = safeRepositoryCall { repository.getGameRecommendation(gameId) }) {
-                is RepositoryResult.Failure -> _dossier.value = DossierUiState.Error(
-                    gameId,
-                    result.error.message,
-                )
-                is RepositoryResult.Success -> _dossier.value = result.data
-                    ?.let(DossierUiState::Success)
-                    ?: DossierUiState.NotFound(gameId)
-            }
+            safeRepositoryCall { repository.getGameRecommendation(gameId) }.fold(
+                onFailure = { error -> _dossier.value = DossierUiState.Error(gameId, error.message) },
+                onSuccess = { result ->
+                    _dossier.value = result.data
+                        ?.let(DossierUiState::Success)
+                        ?: DossierUiState.NotFound(gameId)
+                },
+            )
         }
     }
 
@@ -392,18 +357,24 @@ class PlayfitViewModel @Inject constructor(
                 setToast("Picks is limited to 100 games")
                 return@launch
             }
+            _ui.value = _ui.value.copy(saving = true, error = null)
             val write = try {
                 repository.togglePick(gameId, !current)
             } catch (error: Exception) {
+                _ui.value = _ui.value.copy(saving = false)
                 setToast(error.message ?: "Could not update pick")
                 return@launch
             }
             if (write is RepositoryResult.Failure) {
+                _ui.value = _ui.value.copy(saving = false)
                 setToast(write.error.message)
                 return@launch
             }
             if (write is RepositoryResult.Success) {
-                _ui.value = _ui.value.copy(pendingSync = _ui.value.pendingSync || write.pendingSync)
+                _ui.value = _ui.value.copy(
+                    saving = false,
+                    pendingSync = _ui.value.pendingSync || write.pendingSync,
+                )
             }
             _picks.value = if (current) {
                 _picks.value.filterNot { it.game.gameId == gameId }
@@ -414,7 +385,10 @@ class PlayfitViewModel @Inject constructor(
             updateSavedPickIds(gameId = gameId, picked = !current)
             val next = ProductGameStateTransitions.setPick(existing, gameId, picked = !current)
             updateGameState(next)
-            if (!current) removeRecommendation(gameId)
+            if (!current) {
+                removeRecommendation(gameId)
+                refreshRecommendationsAfterActionIfNeeded()
+            }
             if (current) setToast("Removed from picks") else setToast("Saved to picks")
         }
     }
@@ -431,25 +405,25 @@ class PlayfitViewModel @Inject constructor(
     }
 
     suspend fun searchGames(query: String): List<SeedGame> {
-        return when (val result = safeRepositoryCall { repository.searchGames(query) }) {
-            is RepositoryResult.Success -> result.data
-            is RepositoryResult.Failure -> {
-                _ui.value = _ui.value.copy(error = result.error.message)
-                emptyList()
-            }
-        }
+        return safeRepositoryCall { repository.searchGames(query) }.fold(
+            onSuccess = { it.data },
+            onFailure = { error ->
+                _ui.value = _ui.value.copy(error = error.message)
+                throw IllegalStateException(error.message)
+            },
+        )
     }
 
     fun loadTasteModel() {
         viewModelScope.launch {
             try {
-                when (val result = repository.getTasteModel()) {
-                    is RepositoryResult.Success -> {
+                repository.getTasteModel().fold(
+                    onSuccess = { result ->
                         _tasteModel.value = result.data
                         _ui.value = _ui.value.copy(showingStaleData = result.isStale)
-                    }
-                    is RepositoryResult.Failure -> _ui.value = _ui.value.copy(error = result.error.message)
-                }
+                    },
+                    onFailure = { error -> _ui.value = _ui.value.copy(error = error.message) },
+                )
             } catch (error: Exception) {
                 _ui.value = _ui.value.copy(error = error.message)
             }
@@ -459,15 +433,20 @@ class PlayfitViewModel @Inject constructor(
     fun removePick(gameId: String) {
         viewModelScope.launch {
             try {
-                when (val result = repository.togglePick(gameId, false)) {
-                    is RepositoryResult.Failure -> {
-                        setToast(result.error.message)
+                _ui.value = _ui.value.copy(saving = true, error = null)
+                repository.togglePick(gameId, false).fold(
+                    onFailure = { error ->
+                        _ui.value = _ui.value.copy(saving = false)
+                        setToast(error.message)
                         return@launch
-                    }
-                    is RepositoryResult.Success -> {
-                        _ui.value = _ui.value.copy(pendingSync = _ui.value.pendingSync || result.pendingSync)
-                    }
-                }
+                    },
+                    onSuccess = { result ->
+                        _ui.value = _ui.value.copy(
+                            saving = false,
+                            pendingSync = _ui.value.pendingSync || result.pendingSync,
+                        )
+                    },
+                )
                 _picks.value = _picks.value.filterNot { it.game.gameId == gameId }
                 updateSavedPickIds(gameId = gameId, picked = false)
                 val existing = _state.value.user.gameStates[gameId]
@@ -475,6 +454,7 @@ class PlayfitViewModel @Inject constructor(
                 loadTasteModel()
                 setToast("Removed from picks.")
             } catch (_: Exception) {
+                _ui.value = _ui.value.copy(saving = false)
                 setToast("Could not remove pick.")
             }
         }
@@ -525,19 +505,17 @@ class PlayfitViewModel @Inject constructor(
             )
             _picks.value = _picks.value.filterNot { it.game.gameId == gameId && nextGameState?.inPlayfitPicks != true }
 
-            when (val result = safeRepositoryCall {
-                repository.rebuildTasteProfile(draft, current.user.onboardingCompletedAt)
-            }) {
-                is RepositoryResult.Failure -> _ui.value = _ui.value.copy(error = result.error.message)
-                is RepositoryResult.Success -> {
+            safeRepositoryCall { repository.rebuildTasteProfile(draft, current.user.onboardingCompletedAt) }.fold(
+                onFailure = { error -> _ui.value = _ui.value.copy(error = error.message) },
+                onSuccess = { result ->
                     if (!result.isStale) {
                         _state.value = _state.value.copy(
                             user = _state.value.user.copy(profile = result.data),
                         )
                     }
                     _ui.value = _ui.value.copy(pendingSync = _ui.value.pendingSync || result.pendingSync)
-                }
-            }
+                },
+            )
             loadTasteModel()
             setToast("Signal deleted.")
         }
@@ -545,11 +523,9 @@ class PlayfitViewModel @Inject constructor(
 
     fun resetTaste() {
         viewModelScope.launch {
-            when (val result = safeRepositoryCall { repository.resetTaste() }) {
-                is RepositoryResult.Failure -> {
-                    _ui.value = _ui.value.copy(error = result.error.message)
-                }
-                is RepositoryResult.Success -> {
+            safeRepositoryCall { repository.resetTaste() }.fold(
+                onFailure = { error -> _ui.value = _ui.value.copy(error = error.message) },
+                onSuccess = { result ->
                     _state.value = ProductState()
                     _playNext.value = null
                     _picks.value = emptyList()
@@ -561,25 +537,31 @@ class PlayfitViewModel @Inject constructor(
                         showingStaleData = false,
                     )
                     setToast(if (result.pendingSync) "Taste reset locally; waiting to sync" else "Taste reset")
-                }
-            }
+                },
+            )
         }
     }
 
     fun applyDecisionFeedback(gameId: String, feedback: ProductDecisionFeedback) {
         viewModelScope.launch {
+            _ui.value = _ui.value.copy(saving = true, error = null)
             val write = try {
                 repository.applyFeedback(gameId, feedback)
             } catch (error: Exception) {
+                _ui.value = _ui.value.copy(saving = false)
                 setToast(error.message ?: "Could not save feedback")
                 return@launch
             }
             if (write is RepositoryResult.Failure) {
+                _ui.value = _ui.value.copy(saving = false)
                 setToast(write.error.message)
                 return@launch
             }
             if (write is RepositoryResult.Success) {
-                _ui.value = _ui.value.copy(pendingSync = _ui.value.pendingSync || write.pendingSync)
+                _ui.value = _ui.value.copy(
+                    saving = false,
+                    pendingSync = _ui.value.pendingSync || write.pendingSync,
+                )
             }
             val existing = _state.value.user.gameStates[gameId]
             val next = ProductGameStateTransitions.applyFeedback(existing, gameId, feedback)
@@ -591,8 +573,10 @@ class PlayfitViewModel @Inject constructor(
             if (feedback == ProductDecisionFeedback.NotForMe) {
                 _excludedIds.value = _excludedIds.value + gameId
                 removeRecommendation(gameId)
+                refreshRecommendationsAfterActionIfNeeded()
             } else if (feedback.isPlayedFeedback()) {
                 removeRecommendation(gameId)
+                refreshRecommendationsAfterActionIfNeeded()
             }
             rebuildProfileFromCurrentSignals()
             loadTasteModel()
@@ -624,31 +608,28 @@ class PlayfitViewModel @Inject constructor(
             _ui.value = _ui.value.copy(saving = true)
             delay(1000)
             try {
-                when (val result = block()) {
-                    is RepositoryResult.Failure -> _ui.value = _ui.value.copy(
-                        saving = false,
-                        error = result.error.message,
-                    )
-                    is RepositoryResult.Success -> _ui.value = _ui.value.copy(
-                        saving = false,
-                        pendingSync = _ui.value.pendingSync || result.pendingSync,
-                    )
-                }
+                block().fold(
+                    onFailure = { error ->
+                        _ui.value = _ui.value.copy(saving = false, error = error.message)
+                    },
+                    onSuccess = { result ->
+                        _ui.value = _ui.value.copy(
+                            saving = false,
+                            pendingSync = _ui.value.pendingSync || result.pendingSync,
+                        )
+                    },
+                )
             } catch (e: Exception) {
                 _ui.value = _ui.value.copy(saving = false, error = e.message)
             }
         }
     }
 
-    fun updateState(updater: (ProductState) -> ProductState) {
-        _state.value = updater(_state.value)
-    }
-
     fun clearError() {
         _ui.value = _ui.value.copy(error = null)
     }
 
-    suspend fun getDeviceId(): String = repository.getDeviceId()
+    suspend fun getDeviceId(): String = authManager.deviceId
 
     private fun setToast(message: String) {
         _ui.value = _ui.value.copy(toast = message)
@@ -667,60 +648,72 @@ class PlayfitViewModel @Inject constructor(
     }
 
     private fun updateSavedPickIds(gameId: String, picked: Boolean) {
-        val current = _playNext.value ?: return
-        val ids = current.savedPickIds.toMutableSet().apply {
-            if (picked) add(gameId) else remove(gameId)
-        }
-        _playNext.value = current.copy(savedPickIds = ids.toList())
+        _playNext.value = playNextQueueCoordinator.withSavedPick(_playNext.value, gameId, picked)
     }
 
     private fun removeRecommendation(gameId: String) {
-        val current = _playNext.value ?: return
-        val remaining = buildList {
-            current.primary?.let(::add)
-            addAll(current.alternatives)
-        }.filterNot { it.game.gameId == gameId }
+        _playNext.value = playNextQueueCoordinator.withoutRecommendation(_playNext.value, gameId)
+    }
 
-        val nextPrimary = if (current.primary?.game?.gameId == gameId) {
-            remaining.firstOrNull()
-        } else {
-            current.primary
+    private suspend fun refreshSecondaryData(includeState: Boolean = false) {
+        if (includeState) {
+            safeRepositoryCall { repository.getState() }.fold(
+                onSuccess = { result -> _state.value = result.data },
+                onFailure = {},
+            )
         }
-        _playNext.value = current.copy(
-            primary = nextPrimary,
-            alternatives = remaining.filterNot { it.game.gameId == nextPrimary?.game?.gameId },
+        safeRepositoryCall { repository.getPicks() }.fold(
+            onSuccess = { result -> _picks.value = result.data },
+            onFailure = {},
+        )
+        safeRepositoryCall { repository.getTasteModel() }.fold(
+            onSuccess = { result -> _tasteModel.value = result.data },
+            onFailure = {},
         )
     }
 
-    private suspend fun refreshSecondaryData() {
-        when (val result = safeRepositoryCall { repository.getPicks() }) {
-            is RepositoryResult.Success -> _picks.value = result.data
-            is RepositoryResult.Failure -> Unit
-        }
-        when (val result = safeRepositoryCall { repository.getTasteModel() }) {
-            is RepositoryResult.Success -> _tasteModel.value = result.data
-            is RepositoryResult.Failure -> Unit
-        }
+    private suspend fun refreshRecommendationsAfterActionIfNeeded() {
+        if (!playNextQueueCoordinator.shouldRefreshAfterAction(_playNext.value)) return
+
+        _ui.value = _ui.value.copy(refreshing = true)
+        val previousStateVersion = _playNext.value?.stateVersion
+        safeRepositoryCall { repository.refreshRecommendations() }.fold(
+            onFailure = {
+                _ui.value = _ui.value.copy(refreshing = false)
+            },
+            onSuccess = { result ->
+                _playNext.value = playNextQueueCoordinator.mergeFreshIfNew(
+                    current = _playNext.value,
+                    fresh = result.data,
+                    excludedIds = _excludedIds.value,
+                )
+                _ui.value = _ui.value.copy(
+                    refreshing = false,
+                    showingStaleData = result.isStale,
+                )
+                refreshSecondaryData(includeState = previousStateVersion != result.data.stateVersion)
+            },
+        )
     }
 
     private suspend fun rebuildProfileFromCurrentSignals() {
         val current = _state.value
-        when (val result = safeRepositoryCall {
+        safeRepositoryCall {
             repository.rebuildTasteProfile(
                 current.user.onboarding,
                 current.user.onboardingCompletedAt,
             )
-        }) {
-            is RepositoryResult.Failure -> _ui.value = _ui.value.copy(error = result.error.message)
-            is RepositoryResult.Success -> {
+        }.fold(
+            onFailure = { error -> _ui.value = _ui.value.copy(error = error.message) },
+            onSuccess = { result ->
                 if (!result.isStale) {
                     _state.value = _state.value.copy(
                         user = _state.value.user.copy(profile = result.data),
                     )
                 }
                 _ui.value = _ui.value.copy(pendingSync = _ui.value.pendingSync || result.pendingSync)
-            }
-        }
+            },
+        )
     }
 
     private fun ProductDecisionFeedback.isPlayedFeedback(): Boolean = when (this) {

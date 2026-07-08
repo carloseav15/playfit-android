@@ -24,36 +24,6 @@ class ProductUtilsTest {
     )
 
     @Test
-    fun `decisionTone returns Negative when riskScore is high`() {
-        val entry = makeEntry(riskScore = 60.0)
-        assertEquals(DecisionTone.Negative, ProductUtils.decisionTone(entry))
-    }
-
-    @Test
-    fun `decisionTone returns Warning when confidence is Low`() {
-        val entry = makeEntry(confidence = ProductConfidence.Low)
-        assertEquals(DecisionTone.Warning, ProductUtils.decisionTone(entry))
-    }
-
-    @Test
-    fun `decisionTone returns Positive when strong fit and low risk`() {
-        val entry = makeEntry(affinityScore = 80.0, riskScore = 30.0, confidence = ProductConfidence.High)
-        assertEquals(DecisionTone.Positive, ProductUtils.decisionTone(entry))
-    }
-
-    @Test
-    fun `decisionTone returns Info when promising fit`() {
-        val entry = makeEntry(affinityScore = 65.0, riskScore = 40.0)
-        assertEquals(DecisionTone.Info, ProductUtils.decisionTone(entry))
-    }
-
-    @Test
-    fun `decisionTone returns Warning when affinity is low`() {
-        val entry = makeEntry(affinityScore = 50.0, riskScore = 40.0)
-        assertEquals(DecisionTone.Warning, ProductUtils.decisionTone(entry))
-    }
-
-    @Test
     fun `matchQualityLabel returns Strong match for high scores`() {
         assertEquals("Strong match", ProductUtils.matchQualityLabel(80.0))
         assertEquals("Strong match", ProductUtils.matchQualityLabel(100.0))
@@ -120,14 +90,8 @@ class ProductUtilsTest {
     }
 
     @Test
-    fun `primaryReason returns caution reason when risk is high`() {
-        val entry = makeEntry(riskScore = 60.0)
-        assertEquals("Watch out", ProductUtils.decisionLabel(entry))
-    }
-
-    @Test
-    fun `primaryReason returns fit reason when no high risk`() {
-        val entry = makeEntry(affinityScore = 80.0, riskScore = 30.0)
-        assertEquals(entry.fitReasons.first(), ProductUtils.primaryReason(entry))
+    fun `decisionLabel returns Promising for medium affinity`() {
+        val entry = makeEntry(affinityScore = 65.0, riskScore = 40.0)
+        assertEquals("Promising", ProductUtils.decisionLabel(entry))
     }
 }

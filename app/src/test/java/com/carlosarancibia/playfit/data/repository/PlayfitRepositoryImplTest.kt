@@ -12,6 +12,8 @@ import com.carlosarancibia.playfit.data.local.dao.PendingOperationDao
 import com.carlosarancibia.playfit.data.local.dao.PicksDao
 import com.carlosarancibia.playfit.data.local.entity.CacheEntryEntity
 import com.carlosarancibia.playfit.data.remote.PlayfitApiService
+import com.carlosarancibia.playfit.data.remote.PlatformDto
+import com.carlosarancibia.playfit.data.remote.PlatformsResponse
 import com.carlosarancibia.playfit.data.remote.RankedSeedGameDto
 import com.carlosarancibia.playfit.data.remote.ProfileBuildResponse
 import com.carlosarancibia.playfit.data.remote.ProfileDto
@@ -115,6 +117,59 @@ class PlayfitRepositoryImplTest {
 
         assertTrue(result is RepositoryResult.Failure)
         assertTrue((result as RepositoryResult.Failure).error is RepositoryError.Network)
+    }
+
+    @Test
+    fun `platforms use network response and are cached`() = runTest {
+        coEvery { api.getPlatforms() } returns PlatformsResponse(
+            platforms = listOf(
+                PlatformDto(
+                    platformId = "switch_2",
+                    displayName = "Nintendo Switch 2",
+                    family = "nintendo",
+                    kind = "hybrid",
+                    sortOrder = 10,
+                ),
+            ),
+        )
+        coEvery { cacheDao.put(any()) } just runs
+
+        val result = repository.getPlatforms()
+
+        assertTrue(result is RepositoryResult.Success)
+        result as RepositoryResult.Success
+        assertEquals(DataSource.Network, result.source)
+        assertEquals("switch_2", result.data.single().platformId)
+        assertEquals("Nintendo Switch 2", result.data.single().displayName)
+        coVerify { cacheDao.put(match { it.cacheKey == "platforms" }) }
+    }
+
+    @Test
+    fun `platforms fall back to stale cache when network fails`() = runTest {
+        val cached = PlatformsResponse(
+            platforms = listOf(
+                PlatformDto(
+                    platformId = "ps5",
+                    displayName = "PlayStation 5",
+                    family = "playstation",
+                    kind = "console",
+                    sortOrder = 9,
+                ),
+            ),
+        )
+        coEvery { api.getPlatforms() } throws IOException("offline")
+        coEvery { cacheDao.get("platforms") } returns CacheEntryEntity(
+            cacheKey = "platforms",
+            payload = Json.encodeToString(cached),
+        )
+
+        val result = repository.getPlatforms()
+
+        assertTrue(result is RepositoryResult.Success)
+        result as RepositoryResult.Success
+        assertEquals(DataSource.Cache, result.source)
+        assertTrue(result.isStale)
+        assertEquals("ps5", result.data.single().platformId)
     }
 
     @Test

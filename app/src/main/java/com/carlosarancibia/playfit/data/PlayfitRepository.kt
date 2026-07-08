@@ -1,26 +1,19 @@
 package com.carlosarancibia.playfit.data
 
 import com.carlosarancibia.playfit.model.ProductDecisionFeedback
-import com.carlosarancibia.playfit.data.auth.AuthResult
 import com.carlosarancibia.playfit.model.ProductGameState
 import com.carlosarancibia.playfit.model.ProductOnboardingDraft
 import com.carlosarancibia.playfit.model.ProductPlayNextModel
 import com.carlosarancibia.playfit.model.ProductProfile
 import com.carlosarancibia.playfit.model.ProductState
 import com.carlosarancibia.playfit.model.ProductTasteModel
+import com.carlosarancibia.playfit.model.Platform
 import com.carlosarancibia.playfit.model.RankedSeedGame
 import com.carlosarancibia.playfit.model.SeedGame
 import com.carlosarancibia.playfit.model.SimilarGame
 import kotlinx.coroutines.flow.Flow
 
 interface PlayfitRepository {
-    suspend fun signInAnonymously(): AuthResult
-    suspend fun signInWithGoogle(): AuthResult
-    suspend fun resetPassword(email: String): AuthResult
-    suspend fun signOut(): AuthResult
-    suspend fun deleteAccount(): AuthResult
-    fun isAuthenticated(): Boolean
-    fun getDeviceId(): String
     fun observePendingSync(): Flow<Boolean>
 
     suspend fun getTodayRecommendations(): RepositoryResult<ProductPlayNextModel>
@@ -28,6 +21,7 @@ interface PlayfitRepository {
     suspend fun getGameRecommendation(gameId: String): RepositoryResult<RankedSeedGame?>
     suspend fun getTasteProfile(): RepositoryResult<ProductProfile>
     suspend fun getTasteModel(): RepositoryResult<ProductTasteModel>
+    suspend fun getPlatforms(): RepositoryResult<List<Platform>>
     suspend fun getState(): RepositoryResult<ProductState>
     suspend fun saveOnboarding(
         draft: ProductOnboardingDraft,

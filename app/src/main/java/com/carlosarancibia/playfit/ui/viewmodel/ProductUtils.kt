@@ -4,20 +4,11 @@ import com.carlosarancibia.playfit.model.RankedSeedGame
 
 import com.carlosarancibia.playfit.model.ProductConfidence as Confidence
 
-private const val HIGH_FRICTION_THRESHOLD = 58
+const val HIGH_FRICTION_THRESHOLD = 58
 private const val STRONG_FIT_THRESHOLD = 78
 private const val PROMISING_FIT_THRESHOLD = 62
 
 object ProductUtils {
-    fun decisionTone(entry: RankedSeedGame): DecisionTone {
-        if (entry.riskScore >= HIGH_FRICTION_THRESHOLD) return DecisionTone.Negative
-        if (entry.confidence == Confidence.Low) return DecisionTone.Warning
-        if (entry.affinityScore >= STRONG_FIT_THRESHOLD && entry.riskScore <= 35)
-            return DecisionTone.Positive
-        if (entry.affinityScore >= PROMISING_FIT_THRESHOLD) return DecisionTone.Info
-        return DecisionTone.Warning
-    }
-
     fun decisionLabel(entry: RankedSeedGame): String {
         if (entry.riskScore >= HIGH_FRICTION_THRESHOLD) return "Watch out"
         if (entry.confidence == Confidence.Low) return "Too early to tell"
@@ -52,14 +43,6 @@ object ProductUtils {
         }
     }
 
-    fun primaryReason(entry: RankedSeedGame): String {
-        if (entry.riskScore >= HIGH_FRICTION_THRESHOLD && entry.cautionReasons.isNotEmpty()) {
-            return entry.cautionReasons.first()
-        }
-        return entry.fitReasons.firstOrNull()
-            ?: "Rate a few more games to strengthen this signal."
-    }
-
     fun unknownGenre(): String = "Metadata pending"
 
     fun groupTitle(entry: RankedSeedGame): String {
@@ -73,5 +56,3 @@ object ProductUtils {
         else "Games with the strongest signal right now."
     }
 }
-
-enum class DecisionTone { Positive, Warning, Negative, Info }
