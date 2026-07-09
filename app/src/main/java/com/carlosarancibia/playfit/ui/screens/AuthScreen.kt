@@ -66,6 +66,7 @@ fun AuthScreen(
     onEmailSignUp: suspend (email: String, password: String) -> AuthResult,
     onGuestSignIn: suspend () -> AuthResult,
     onResetPassword: suspend (email: String) -> AuthResult = { AuthResult.Error("Not available") },
+    isAnonymous: Boolean = false,
 ) {
     var view by rememberSaveable { mutableStateOf(AuthView.Options) }
     var email by rememberSaveable { mutableStateOf("") }
@@ -121,7 +122,6 @@ fun AuthScreen(
                             error = null
                             success = null
                         },
-                        modifier = Modifier.size(32.dp),
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
@@ -130,7 +130,7 @@ fun AuthScreen(
                         )
                     }
                 } else {
-                    Spacer(Modifier.size(32.dp))
+                    Spacer(Modifier.size(48.dp))
                 }
                 Image(
                     painter = painterResource(com.carlosarancibia.playfit.R.drawable.playfit_logo),
@@ -140,7 +140,6 @@ fun AuthScreen(
                 )
                 IconButton(
                     onClick = onDismiss,
-                    modifier = Modifier.size(32.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Close,
@@ -288,39 +287,60 @@ fun AuthScreen(
                         )
                     }
 
-                    Spacer(Modifier.height(PlayfitSpacing.sm))
+                    if (isAnonymous) {
+                        Spacer(Modifier.height(PlayfitSpacing.sm))
 
-                    OutlinedButton(
-                        onClick = {
-                            scope.launch {
-                                focusManager.clearFocus()
-                                if (busy) return@launch
-                                error = null
-                                success = null
-                                busy = true
-                                val result = onGuestSignIn()
-                                when (result) {
-                                    is AuthResult.Success -> onDismiss()
-                                    is AuthResult.Pending -> success = result.message
-                                    is AuthResult.Error -> error = result.message
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                            ),
+                        ) {
+                            Text(
+                                text = "Keep Browsing as Guest",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 13.sp,
+                            )
+                        }
+                    } else {
+                        Spacer(Modifier.height(PlayfitSpacing.sm))
+
+                        OutlinedButton(
+                            onClick = {
+                                scope.launch {
+                                    focusManager.clearFocus()
+                                    if (busy) return@launch
+                                    error = null
+                                    success = null
+                                    busy = true
+                                    val result = onGuestSignIn()
+                                    when (result) {
+                                        is AuthResult.Success -> onDismiss()
+                                        is AuthResult.Pending -> success = result.message
+                                        is AuthResult.Error -> error = result.message
+                                    }
+                                    busy = false
                                 }
-                                busy = false
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
-                        ),
-                        enabled = !busy,
-                    ) {
-                        Text(
-                            text = "Continue as Guest",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 13.sp,
-                        )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                            ),
+                            enabled = !busy,
+                        ) {
+                            Text(
+                                text = "Continue as Guest",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 13.sp,
+                            )
+                        }
                     }
 
                     Spacer(Modifier.height(PlayfitSpacing.sm))

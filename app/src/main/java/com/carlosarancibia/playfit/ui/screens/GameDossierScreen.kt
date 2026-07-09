@@ -384,7 +384,8 @@ fun GameDossierScreen(
             if (showFeedbackChips) {
                 item {
                     FeedbackChips(
-                        onSelect = {
+                        onSelect = { feedback ->
+                            viewModel.applyDecisionFeedback(entry.game.gameId, feedback)
                             showFeedbackChips = false
                         },
                     )

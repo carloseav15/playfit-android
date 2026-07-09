@@ -71,6 +71,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -434,6 +436,13 @@ fun GameSearchSheet(
                         val rowBorderColor = if (isCurrentSelection) accentColor.copy(alpha = 0.3f)
                                              else Color.Transparent
 
+                        val rowAccessibilityLabel = buildString {
+                            append(game.title)
+                            if (metadataString.isNotBlank()) append(", $metadataString")
+                            if (statusLabel.isNotBlank()) append(", $statusLabel")
+                            if (isDisabled) append(", unavailable")
+                        }
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -446,6 +455,7 @@ fun GameSearchSheet(
                                 .clickable(enabled = !isDisabled) {
                                     onSelect(game)
                                 }
+                                .semantics { contentDescription = rowAccessibilityLabel }
                                 .padding(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)

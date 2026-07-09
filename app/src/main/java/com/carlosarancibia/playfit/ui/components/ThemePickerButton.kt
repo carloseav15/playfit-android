@@ -71,7 +71,7 @@ fun ThemePickerButton(
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Filled.LightMode,
-                        contentDescription = null,
+                        contentDescription = "Option: Light mode",
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -91,7 +91,7 @@ fun ThemePickerButton(
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Filled.DarkMode,
-                        contentDescription = null,
+                        contentDescription = "Option: Dark mode",
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -108,7 +108,13 @@ fun ThemePickerButton(
                 },
             )
             DropdownMenuItem(
-                leadingIcon = { Icon(Icons.Default.Settings, null, modifier = Modifier.size(18.dp)) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Settings,
+                        contentDescription = "Option: System mode",
+                        modifier = Modifier.size(18.dp),
+                    )
+                },
                 text = {
                     Text(
                         "System",

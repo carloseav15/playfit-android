@@ -172,6 +172,7 @@ fun PlayfitApp(
                     onResetPassword = { email ->
                         viewModel.resetPassword(email)
                     },
+                    isAnonymous = authState.isAnonymous,
                 )
             }
         }
