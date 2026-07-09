@@ -27,18 +27,17 @@ class AuthInterceptor @Inject constructor() : Interceptor {
             .addQueryParameter("device_id", manager?.deviceId ?: "")
             .build()
 
-        val request = if (token != null) {
-            original.newBuilder()
-                .url(newUrl)
-                .header("Authorization", "Bearer $token")
-                .header("Content-Type", "application/json")
-                .build()
-        } else {
-            original.newBuilder()
-                .url(newUrl)
-                .header("Content-Type", "application/json")
-                .build()
+        val isJsonMethod = original.method in setOf("POST", "PUT", "PATCH")
+
+        val builder = original.newBuilder()
+            .url(newUrl)
+        if (token != null) {
+            builder.header("Authorization", "Bearer $token")
         }
+        if (isJsonMethod) {
+            builder.header("Content-Type", "application/json")
+        }
+        val request = builder.build()
 
         return chain.proceed(request)
     }

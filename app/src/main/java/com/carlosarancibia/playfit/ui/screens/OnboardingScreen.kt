@@ -63,6 +63,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.carlosarancibia.playfit.ui.viewmodel.PlayfitViewModel
 import com.carlosarancibia.playfit.ui.components.OnboardingHeader
+import com.carlosarancibia.playfit.ui.components.ThemePickerButton
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
@@ -83,11 +84,8 @@ import com.carlosarancibia.playfit.model.fallbackPlatforms
 import com.carlosarancibia.playfit.model.familyDisplayName
 import com.carlosarancibia.playfit.model.platformPresets
 import com.carlosarancibia.playfit.model.sortedPlatformFamilies
-import com.carlosarancibia.playfit.ui.components.design.GamepadIcon
 import com.carlosarancibia.playfit.ui.components.design.GlowBackground
-import com.carlosarancibia.playfit.ui.components.design.LaptopIcon
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
-import com.carlosarancibia.playfit.ui.components.design.TvIcon
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
@@ -100,6 +98,8 @@ fun OnboardingScreen(
     onCancel: (() -> Unit)? = null,
     platforms: List<Platform> = fallbackPlatforms,
     onSearchGames: suspend (String) -> List<SeedGame> = { emptyList() },
+    themeMode: String = "system",
+    onThemeChange: (String) -> Unit = {},
 ) {
     val stepState = if (viewModel != null) viewModel.onboardingStep.collectAsMutableState() else remember { mutableStateOf(0) }
     var step by stepState
@@ -254,21 +254,19 @@ fun OnboardingScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (step > 0) {
-                        TextButton(onClick = {
-                            step--
-                        }) {
+                        TextButton(onClick = { step-- }) {
                             Text(
                                 text = "← Back",
-                                fontWeight = FontWeight.Bold,
-                                color = PlayfitExtendedTheme.colors.playfitAccent
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
                     } else if (onCancel != null) {
                         TextButton(onClick = onCancel) {
                             Text(
                                 text = "Cancel",
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     } else {
@@ -284,11 +282,11 @@ fun OnboardingScreen(
                         )
                         val buttonBackground = if (canContinue) {
                             Modifier
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(MaterialTheme.shapes.large)
                                 .background(indigoGradient)
                         } else {
                             Modifier
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(MaterialTheme.shapes.large)
                                 .background(PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.3f))
                         }
                         Button(
@@ -300,7 +298,7 @@ fun OnboardingScreen(
                                 )
                             },
                             enabled = canContinue,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = MaterialTheme.shapes.large,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color.Transparent,
                                 disabledContainerColor = Color.Transparent
@@ -326,7 +324,7 @@ fun OnboardingScreen(
                                 step++
                             },
                             enabled = canContinue,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = MaterialTheme.shapes.large,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = PlayfitExtendedTheme.colors.playfitAccent,
                                 disabledContainerColor = PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.3f)
@@ -355,13 +353,24 @@ fun OnboardingScreen(
                     .padding(top = PlayfitSpacing.xl, bottom = PlayfitSpacing.md),
                 verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.md)
             ) {
-                Text(
-                    text = "SET UP YOUR TASTE",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Black,
-                    color = PlayfitExtendedTheme.colors.playfitAccent,
-                    letterSpacing = 0.15.sp
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "SET UP YOUR TASTE",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Black,
+                        color = PlayfitExtendedTheme.colors.playfitAccent,
+                        letterSpacing = 0.15.sp
+                    )
+
+                    ThemePickerButton(
+                        currentTheme = themeMode,
+                        onThemeChange = onThemeChange,
+                    )
+                }
 
                 OnboardingHeader(
                     currentStep = step,

@@ -1,6 +1,7 @@
 package com.carlosarancibia.playfit.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,7 +49,7 @@ fun ReasonList(
         listOf("No specific reasons available.")
     }
     val (titleColor, markerColor) = tone.colors()
-    val isDark = MaterialTheme.colorScheme.background.red < 0.2f
+    val isDark = isSystemInDarkTheme()
     val primaryColor = MaterialTheme.colorScheme.primary
 
     Box(

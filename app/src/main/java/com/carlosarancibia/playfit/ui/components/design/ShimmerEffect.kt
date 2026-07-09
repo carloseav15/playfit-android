@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -41,11 +40,12 @@ fun ShimmerBox(
         ),
         label = "shimmer_translate",
     )
+    val shimmerColor = MaterialTheme.colorScheme.onSurface
     val brush = Brush.linearGradient(
         colors = listOf(
-            Color.LightGray.copy(alpha = 0.12f),
-            Color.LightGray.copy(alpha = 0.05f),
-            Color.LightGray.copy(alpha = 0.12f),
+            shimmerColor.copy(alpha = 0.12f),
+            shimmerColor.copy(alpha = 0.05f),
+            shimmerColor.copy(alpha = 0.12f),
         ),
         start = Offset(translateAnim, 0f),
         end = Offset(translateAnim + 300f, 0f),

@@ -166,6 +166,36 @@ class PlayfitViewModel @Inject constructor(
         _ui.value = _ui.value.copy(loading = true)
         _platformsUi.value = _platformsUi.value.copy(loading = true, error = null)
         val snapshot = initialDataCoordinator.load()
+        applyInitialDataSnapshot(snapshot)
+    }
+
+    /**
+     * Recommendations aren't computed synchronously by the backend when onboarding
+     * completes, so the first fetch can come back empty (200, no error) before the
+     * server has caught up. Retries a few times, keeping `loading = true` throughout
+     * so Play Next stays on its existing "still checking" skeleton instead of ever
+     * reaching the empty state.
+     */
+    private suspend fun loadInitialDataAfterOnboarding() {
+        _ui.value = _ui.value.copy(loading = true)
+        _platformsUi.value = _platformsUi.value.copy(loading = true, error = null)
+
+        var snapshot = initialDataCoordinator.load()
+        var attempt = 0
+        while (
+            snapshot.error == null &&
+            snapshot.playNext.isEmptyRecommendations() &&
+            attempt < MAX_ONBOARDING_RECS_ATTEMPTS
+        ) {
+            delay(ONBOARDING_RECS_RETRY_DELAY_MS)
+            snapshot = initialDataCoordinator.load()
+            attempt++
+        }
+
+        applyInitialDataSnapshot(snapshot)
+    }
+
+    private fun applyInitialDataSnapshot(snapshot: InitialDataSnapshot) {
         snapshot.state?.let { _state.value = it }
         snapshot.playNext?.let { _playNext.value = it }
         snapshot.picks?.let { _picks.value = it }
@@ -178,6 +208,9 @@ class PlayfitViewModel @Inject constructor(
             showingStaleData = snapshot.showingStaleData,
         )
     }
+
+    private fun ProductPlayNextModel?.isEmptyRecommendations(): Boolean =
+        this == null || (primary == null && alternatives.isEmpty())
 
     fun linkGoogleAccount() {
         authCoordinator.linkGoogleAccount()
@@ -241,7 +274,7 @@ class PlayfitViewModel @Inject constructor(
             )
             preferencesDataStore.setOnboardingCompleted(true)
             _onboardingCompleted.value = true
-            loadInitialData()
+            loadInitialDataAfterOnboarding()
             setToast("Profile ready. Your Play Next pick is ready.")
         }
     }
@@ -749,5 +782,10 @@ class PlayfitViewModel @Inject constructor(
         RepositoryResult.Failure(
             RepositoryError.Unknown(error.message ?: "Local data could not be read."),
         )
+    }
+
+    private companion object {
+        const val MAX_ONBOARDING_RECS_ATTEMPTS = 3
+        const val ONBOARDING_RECS_RETRY_DELAY_MS = 1500L
     }
 }

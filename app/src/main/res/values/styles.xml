@@ -2,5 +2,8 @@
     <style name="Theme.Playfit" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">@color/splash_background</item>
     </style>
+
+    <color name="splash_background">#FFF8FAFC</color>
 </resources>

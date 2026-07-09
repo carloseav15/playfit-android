@@ -212,6 +212,8 @@ fun PlayfitApp(
                     onCancel = { showOnboarding = false },
                     platforms = platforms,
                     onSearchGames = { query -> viewModel.searchGames(query) },
+                    themeMode = themeMode,
+                    onThemeChange = { viewModel.setThemeMode(it) },
                 )
             }
         }

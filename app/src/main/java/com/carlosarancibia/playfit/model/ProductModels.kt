@@ -265,12 +265,13 @@ val platformPresets: List<PlatformPreset> = listOf(
     },
 )
 
+val platformStandardFamilies = listOf("nintendo", "playstation", "xbox", "sega", "pc")
+
 fun sortedPlatformFamilies(platforms: List<Platform>): List<String> {
-    val standard = listOf("nintendo", "playstation", "xbox", "sega", "pc")
     val families = platforms.map { it.family }.distinct()
-    val ordered = standard.filter { it in families }
-    val other = families.filter { it !in standard }
-    return ordered + other
+    val ordered = platformStandardFamilies.filter { it in families }
+    val hasOther = families.any { it !in platformStandardFamilies }
+    return ordered + (if (hasOther) listOf("other") else emptyList())
 }
 
 fun familyDisplayName(family: String): String = when (family) {
@@ -279,5 +280,6 @@ fun familyDisplayName(family: String): String = when (family) {
     "xbox" -> "Xbox"
     "sega" -> "SEGA"
     "pc" -> "PC"
+    "other" -> "Other"
     else -> family.replaceFirstChar { it.uppercase() }
 }

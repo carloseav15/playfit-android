@@ -100,30 +100,25 @@ fun OnboardingHeader(
 
                 Spacer(Modifier.height(6.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val labelColor = when {
-                        isActive -> PlayfitExtendedTheme.colors.playfitAccent
-                        isCompleted -> PlayfitExtendedTheme.colors.playfitPositive
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                    }
-                    Text(
-                        text = label.uppercase(),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Black,
-                        color = labelColor,
-                        letterSpacing = 0.5.sp
-                    )
-                    Text(
-                        text = count,
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        fontWeight = FontWeight.Medium
-                    )
+                val labelColor = when {
+                    isActive -> PlayfitExtendedTheme.colors.playfitAccent
+                    isCompleted -> PlayfitExtendedTheme.colors.playfitPositive
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                 }
+
+                Text(
+                    text = label.uppercase(),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    color = labelColor,
+                    letterSpacing = 0.5.sp
+                )
+                Text(
+                    text = count,
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     }

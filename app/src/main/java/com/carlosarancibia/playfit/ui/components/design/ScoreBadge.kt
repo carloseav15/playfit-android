@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,7 +24,9 @@ fun ScoreBadge(
         text = text,
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onPrimary,
+        // playfitInk is light-to-mid toned in both themes (WCAG-checked against
+        // #0d9488 light / #38bdf8 dark), so a fixed dark navy passes AA on both.
+        color = Color(0xFF0F172A),
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
             .background(PlayfitExtendedTheme.colors.playfitInk)

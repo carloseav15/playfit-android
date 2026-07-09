@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -22,8 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.carlosarancibia.playfit.ui.components.design.MoonIcon
-import com.carlosarancibia.playfit.ui.components.design.SunIcon
 
 @Composable
 fun ThemePickerButton(
@@ -42,8 +42,18 @@ fun ThemePickerButton(
                 contentAlignment = Alignment.Center,
             ) {
                 when (currentTheme) {
-                    "light" -> SunIcon(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    "dark" -> MoonIcon(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    "light" -> Icon(
+                        imageVector = Icons.Filled.LightMode,
+                        contentDescription = "Light mode",
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    "dark" -> Icon(
+                        imageVector = Icons.Filled.DarkMode,
+                        contentDescription = "Dark mode",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     else -> Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = "System theme selection",
@@ -58,7 +68,14 @@ fun ThemePickerButton(
             onDismissRequest = { expanded = false },
         ) {
             DropdownMenuItem(
-                leadingIcon = { SunIcon(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.LightMode,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
                 text = {
                     Text(
                         "Light",
@@ -71,7 +88,14 @@ fun ThemePickerButton(
                 },
             )
             DropdownMenuItem(
-                leadingIcon = { MoonIcon(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.DarkMode,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
                 text = {
                     Text(
                         "Dark",

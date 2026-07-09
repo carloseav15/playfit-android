@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,8 +21,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
@@ -95,23 +96,38 @@ fun SplashScreen(
         }
     }
 
+    val accent = PlayfitExtendedTheme.colors.playfitAccent
+    val toneAccent = PlayfitExtendedTheme.colors.playfitToneAccent
+
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .alpha(glowOpacity)
             .background(MaterialTheme.colorScheme.background)
+            .drawBehind {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            accent.copy(alpha = 0.35f),
+                            accent.copy(alpha = 0.0f),
+                        ),
+                    ),
+                    radius = size.width * 0.85f,
+                    center = Offset(size.width, 0f),
+                )
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            toneAccent.copy(alpha = 0.20f),
+                            toneAccent.copy(alpha = 0.0f),
+                        ),
+                    ),
+                    radius = size.width * 0.75f,
+                    center = Offset(0f, size.height),
+                )
+            }
             .semantics { contentDescription = "playfit.splash" },
     ) {
-        Box(
-            modifier = Modifier
-                .size(280.dp)
-                .alpha(glowOpacity)
-                .blur(80.dp)
-                .background(
-                    PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.25f),
-                    CircleShape,
-                )
-                .align(Alignment.Center),
-        )
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

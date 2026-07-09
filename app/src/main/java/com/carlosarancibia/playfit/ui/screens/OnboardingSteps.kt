@@ -26,6 +26,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Computer
+import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.VideogameAsset
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -37,13 +41,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -82,11 +87,8 @@ import com.carlosarancibia.playfit.model.fallbackPlatforms
 import com.carlosarancibia.playfit.model.familyDisplayName
 import com.carlosarancibia.playfit.model.platformPresets
 import com.carlosarancibia.playfit.model.sortedPlatformFamilies
-import com.carlosarancibia.playfit.ui.components.design.GamepadIcon
 import com.carlosarancibia.playfit.ui.components.design.GlowBackground
-import com.carlosarancibia.playfit.ui.components.design.LaptopIcon
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
-import com.carlosarancibia.playfit.ui.components.design.TvIcon
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
@@ -102,7 +104,6 @@ fun PlatformStep(
         Text(
             text = "Where do you play?",
             style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.onBackground,
         )
         Spacer(Modifier.height(PlayfitSpacing.xs))
@@ -116,9 +117,7 @@ fun PlatformStep(
         Text(
             text = "QUICK GROUPS",
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-            letterSpacing = 0.5.sp
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(PlayfitSpacing.sm))
 
@@ -162,13 +161,14 @@ fun PlatformStep(
                 Text(
                     text = "Customize Platforms...",
                     fontWeight = FontWeight.Bold,
-                    color = PlayfitExtendedTheme.colors.playfitAccent
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlatformPresetCard(
     preset: PlatformPreset,
@@ -183,79 +183,63 @@ fun PlatformPresetCard(
     val isSelected = presetIds.isNotEmpty() && selectedCount == presetIds.size
     val isPartiallySelected = selectedCount > 0 && !isSelected
 
-    val accentColor = PlayfitExtendedTheme.colors.playfitAccent
-    val borderColor = when {
-        isSelected -> accentColor.copy(alpha = 0.4f)
-        isPartiallySelected -> accentColor.copy(alpha = 0.2f)
-        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+    val containerColor = when {
+        isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        isPartiallySelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
     }
-    val backgroundColor = when {
-        isSelected -> accentColor.copy(alpha = 0.08f)
-        isPartiallySelected -> accentColor.copy(alpha = 0.04f)
-        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+    val borderColor = when {
+        isSelected -> MaterialTheme.colorScheme.primary
+        isPartiallySelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+    }
+    val tintColor = when {
+        isSelected -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, borderColor, RoundedCornerShape(16.dp))
-            .background(backgroundColor)
-            .clickable(onClick = onClick)
-            .background(
-                Brush.radialGradient(
-                    colors = if (isSelected) listOf(accentColor.copy(alpha = 0.08f), Color.Transparent)
-                    else listOf(Color.Transparent, Color.Transparent),
-                    radius = 200f
-                )
-            )
-            .padding(16.dp)
-            .fillMaxWidth()
-            .height(112.dp)
+    val icon = when (preset.id) {
+        "pc" -> Icons.Filled.Computer
+        "retro" -> Icons.Filled.Tv
+        else -> Icons.Filled.VideogameAsset
+    }
+
+    OutlinedCard(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = containerColor,
+        ),
+        border = BorderStroke(1.dp, borderColor),
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(PlayfitSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.sm)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = preset.label,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (isSelected) accentColor else MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = preset.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        lineHeight = 14.sp
-                    )
-                }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
+                tint = tintColor,
+            )
 
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(
-                            if (isSelected) accentColor.copy(alpha = 0.15f)
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.03f)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val iconColor = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurfaceVariant
-                    when (preset.id) {
-                        "pc" -> LaptopIcon(modifier = Modifier.size(18.dp), color = iconColor)
-                        "retro" -> TvIcon(modifier = Modifier.size(18.dp), color = iconColor)
-                        else -> GamepadIcon(modifier = Modifier.size(18.dp), color = iconColor)
-                    }
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.xs)) {
+                Text(
+                    text = preset.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = preset.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
 
             val statusLabel = when {
@@ -263,14 +247,13 @@ fun PlatformPresetCard(
                 isPartiallySelected -> "$selectedCount of ${presetIds.size}"
                 else -> "${presetIds.size} systems"
             }
-            val statusColor = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            val statusColor = if (isSelected) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant
 
             Text(
                 text = statusLabel.uppercase(),
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Black,
+                style = MaterialTheme.typography.labelSmall,
                 color = statusColor,
-                letterSpacing = 0.8.sp
             )
         }
     }
@@ -373,7 +356,7 @@ fun GameSlotCard(
         Box(
             modifier = modifier
                 .aspectRatio(0.72f)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(MaterialTheme.shapes.small)
                 .clickable { onClick() }
         ) {
             val coverUrl = game.externalCoverUrl ?: game.coverPath
@@ -409,29 +392,12 @@ fun GameSlotCard(
                 }
             }
 
-            IconButton(
-                onClick = onClick,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(8.dp)
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.86f)),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Change ${game.title}",
-                    tint = accentColor,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
-
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(8.dp)
                     .size(32.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(MaterialTheme.shapes.small)
                     .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.86f))
                     .clickable { onRemove() },
                 contentAlignment = Alignment.Center
@@ -449,7 +415,7 @@ fun GameSlotCard(
         Box(
             modifier = modifier
                 .aspectRatio(0.72f)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(MaterialTheme.shapes.small)
                 .background(cardBgColor)
                 .clickable { onClick() }
                 .drawBehind {
@@ -460,7 +426,7 @@ fun GameSlotCard(
                     drawRoundRect(
                         color = dashColor,
                         style = stroke,
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx())
                     )
                 }
                 .padding(1.dp),

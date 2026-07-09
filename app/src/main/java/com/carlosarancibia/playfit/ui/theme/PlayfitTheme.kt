@@ -1,7 +1,9 @@
 package com.carlosarancibia.playfit.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -13,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Immutable
@@ -64,11 +67,14 @@ private val LightColors = lightColorScheme(
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFF0F766E).copy(alpha = 0.12f),
     onPrimaryContainer = Color(0xFF0F766E),
-    secondary = Color(0xFF0F766E),
+    secondary = Color(0xFF0369A1),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFE0F2FE),
+    onSecondaryContainer = Color(0xFF0369A1),
     tertiary = Color(0xFF4F46E5),
     background = Color(0xFFF8FAFC),
     onBackground = Color(0xFF0F172A),
-    surface = Color(0xFFF8FAFC),
+    surface = Color(0xFFFFFFFF),
     onSurface = Color(0xFF0F172A),
     surfaceVariant = Color(0xFFE2E8F0),
     onSurfaceVariant = Color(0xFF475569),
@@ -90,11 +96,14 @@ private val DarkColors = darkColorScheme(
     onPrimary = Color(0xFF070A12),
     primaryContainer = Color(0xFFFF6A3D).copy(alpha = 0.15f),
     onPrimaryContainer = Color(0xFFFF6A3D),
-    secondary = Color(0xFFFF6A3D),
+    secondary = Color(0xFF7DD3FC),
+    onSecondary = Color(0xFF070A12),
+    secondaryContainer = Color(0xFF0C4A6E),
+    onSecondaryContainer = Color(0xFF7DD3FC),
     tertiary = Color(0xFF38BDF8),
     background = Color(0xFF070A12),
     onBackground = Color(0xFFF8FAFC),
-    surface = Color(0xFF070A12),
+    surface = Color(0xFF0F172A),
     onSurface = Color(0xFFF8FAFC),
     surfaceVariant = Color(0xFF1E293B),
     onSurfaceVariant = Color(0xFF94A3B8),
@@ -125,6 +134,13 @@ val PlayfitTypography = Typography(
         fontSize = 28.sp,
         lineHeight = 32.sp,
         letterSpacing = (-0.5).sp
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Black,
+        fontSize = 24.sp,
+        lineHeight = 28.sp,
+        letterSpacing = (-0.25).sp
     ),
     titleLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
@@ -168,6 +184,13 @@ val PlayfitTypography = Typography(
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp
     ),
+    labelMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
+    ),
     labelSmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.ExtraBold,
@@ -175,6 +198,14 @@ val PlayfitTypography = Typography(
         lineHeight = 16.sp,
         letterSpacing = 1.5.sp
     )
+)
+
+val PlayfitShapes = Shapes(
+    extraSmall = RoundedCornerShape(4.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(16.dp),
+    extraLarge = RoundedCornerShape(24.dp),
 )
 
 @Composable
@@ -187,6 +218,7 @@ fun PlayfitTheme(
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColors else LightColors,
             typography = PlayfitTypography,
+            shapes = PlayfitShapes,
             content = content,
         )
     }

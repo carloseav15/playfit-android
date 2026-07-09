@@ -6,6 +6,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -19,11 +20,11 @@ import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 fun GlowBackground(
     modifier: Modifier = Modifier,
 ) {
-    val isDark = MaterialTheme.colorScheme.background.red < 0.2f
+    val isDark = isSystemInDarkTheme()
     val accentColor = PlayfitExtendedTheme.colors.playfitAccent
     
-    // Bottom-left green positive glow, restoring warm/cool contrast of the Web!
-    val toneColor = PlayfitExtendedTheme.colors.playfitPositive
+    // Bottom-left sky blue glow, matching iOS implementation!
+    val toneColor = PlayfitExtendedTheme.colors.playfitToneAccent
 
     val baseBgColor = MaterialTheme.colorScheme.background
 

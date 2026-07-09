@@ -18,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.carlosarancibia.playfit.model.RankedSeedGame
@@ -31,6 +30,7 @@ fun AlternativeRow(
     entry: RankedSeedGame,
     onClick: () -> Unit,
 ) {
+    val chevronColor = MaterialTheme.colorScheme.onSurfaceVariant
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -97,7 +97,7 @@ fun AlternativeRow(
                 }
                 drawPath(
                     path = path,
-                    color = Color.Gray.copy(alpha = 0.7f),
+                    color = chevronColor,
                     style = androidx.compose.ui.graphics.drawscope.Stroke(
                         width = 2.dp.toPx(),
                         cap = androidx.compose.ui.graphics.StrokeCap.Round,

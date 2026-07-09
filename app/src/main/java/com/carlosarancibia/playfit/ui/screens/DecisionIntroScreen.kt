@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,13 +19,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -42,9 +46,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -57,15 +62,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.SeedGame
-import com.carlosarancibia.playfit.ui.components.design.CompassIcon
 import com.carlosarancibia.playfit.ui.components.design.GlowBackground
-import com.carlosarancibia.playfit.ui.components.design.LoginIcon
-import com.carlosarancibia.playfit.ui.components.design.MoonIcon
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
-import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
-import com.carlosarancibia.playfit.ui.components.design.SparklesIcon
-import com.carlosarancibia.playfit.ui.components.design.SunIcon
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import com.carlosarancibia.playfit.ui.components.ThemePickerButton
 
@@ -86,7 +85,7 @@ fun DecisionIntroScreen(
     onThemeChange: (String) -> Unit = {},
     onSearchGames: suspend (String) -> List<SeedGame> = { emptyList() },
 ) {
-    val isDark = MaterialTheme.colorScheme.background.red < 0.2f
+    val isDark = isSystemInDarkTheme()
 
     // Fetch coverUrl for Hades dynamically
     var hadesCoverUrl by remember { mutableStateOf<String?>(null) }
@@ -96,6 +95,9 @@ fun DecisionIntroScreen(
             val hades = results.find { it.title.equals(mockGameTitle, ignoreCase = true) } ?: results.firstOrNull()
             hadesCoverUrl = hades?.externalCoverUrl ?: hades?.coverPath
         } catch (_: Exception) {}
+        if (hadesCoverUrl.isNullOrEmpty()) {
+            hadesCoverUrl = "https://vhhnwjuwqbspvllvppnn.supabase.co/storage/v1/object/public/game-covers/hades.jpg"
+        }
     }
 
     // Sparkles pulse animation
@@ -116,11 +118,11 @@ fun DecisionIntroScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = PlayfitSpacing.md),
             verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.md),
         ) {
-            Spacer(Modifier.height(PlayfitSpacing.sm))
 
             // ── Top Header Bar ──
             Row(
@@ -166,11 +168,10 @@ fun DecisionIntroScreen(
                 )
             }
 
-            // ── Unified Parent Glass Card ──
-            PlayfitGlassCard(
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.lg)
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.lg)) {
                     
                     // Hero section content
                     Column {
@@ -222,59 +223,29 @@ fun DecisionIntroScreen(
                         Spacer(Modifier.height(PlayfitSpacing.md))
 
                         // ── "Find What to Play" button ──
-                        val findButtonGradient = if (isDark) {
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    PlayfitExtendedTheme.colors.playfitAccent,
-                                    PlayfitExtendedTheme.colors.playfitIndigo,
-                                ),
-                            )
-                        } else {
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    PlayfitExtendedTheme.colors.playfitAccent,
-                                    PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.85f),
-                                ),
-                            )
-                        }
-
                         Button(
                             onClick = onStartCalibration,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp)
                                 .semantics { contentDescription = "playfit.intro.start" },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = MaterialTheme.shapes.large,
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent,
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
                             ),
-                            elevation = ButtonDefaults.buttonElevation(
-                                defaultElevation = if (isDark) 12.dp else 6.dp,
-                            ),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(findButtonGradient, RoundedCornerShape(16.dp)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    CompassIcon(
-                                        modifier = Modifier.size(20.dp),
-                                        color = Color.White
-                                    )
-                                    Text(
-                                        text = "Find What to Play",
-                                        style = MaterialTheme.typography.titleSmall.copy(
-                                            fontWeight = FontWeight.Black,
-                                            color = Color.White,
-                                        ),
-                                    )
-                                }
-                            }
+                            Icon(
+                                imageVector = Icons.Filled.Explore,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "Find What to Play",
+                                style = MaterialTheme.typography.titleSmall,
+                            )
                         }
 
                         // ── "Sign In" button ──
@@ -291,11 +262,12 @@ fun DecisionIntroScreen(
                                     .fillMaxWidth()
                                     .height(56.dp)
                                     .semantics { contentDescription = "playfit.intro.signin" },
-                                shape = RoundedCornerShape(16.dp),
+                                shape = MaterialTheme.shapes.large,
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = signInContainerColor,
                                 ),
                                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -303,7 +275,7 @@ fun DecisionIntroScreen(
                                         .border(
                                             width = 1.dp,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                                            shape = RoundedCornerShape(16.dp),
+                                            shape = MaterialTheme.shapes.large,
                                         ),
                                     contentAlignment = Alignment.Center,
                                 ) {
@@ -311,9 +283,11 @@ fun DecisionIntroScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
-                                        LoginIcon(
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.Login,
+                                            contentDescription = null,
                                             modifier = Modifier.size(20.dp),
-                                            color = MaterialTheme.colorScheme.onBackground
+                                            tint = MaterialTheme.colorScheme.onBackground,
                                         )
                                         Text(
                                             text = "Sign In",
@@ -332,30 +306,31 @@ fun DecisionIntroScreen(
                     Spacer(Modifier.height(PlayfitSpacing.xs))
 
                     // ── Preview section ──
+                    val previewAccent = PlayfitExtendedTheme.colors.playfitAccent
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(24.dp))
+                            .clip(MaterialTheme.shapes.extraLarge)
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f))
+                            .drawBehind {
+                                drawCircle(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            previewAccent.copy(alpha = 0.30f),
+                                            previewAccent.copy(alpha = 0.0f),
+                                        ),
+                                    ),
+                                    radius = size.width * 0.30f,
+                                    center = Offset(size.width, 0f),
+                                )
+                            }
                             .border(
                                 width = 1.dp,
                                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
-                                shape = RoundedCornerShape(24.dp),
+                                shape = MaterialTheme.shapes.extraLarge,
                             )
                             .padding(16.dp)
                     ) {
-                        // Inner glow
-                        Box(
-                            modifier = Modifier
-                                .size(140.dp)
-                                .align(Alignment.TopEnd)
-                                .blur(25.dp)
-                                .background(
-                                    PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.15f),
-                                    CircleShape,
-                                ),
-                        )
-
                         Column(
                             verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.sm),
                         ) {
@@ -369,11 +344,13 @@ fun DecisionIntroScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    SparklesIcon(
+                                    Icon(
+                                        imageVector = Icons.Filled.AutoAwesome,
+                                        contentDescription = null,
                                         modifier = Modifier
                                             .size(12.dp)
                                             .scale(sparklesScale),
-                                        color = PlayfitExtendedTheme.colors.playfitAccent
+                                        tint = PlayfitExtendedTheme.colors.playfitAccent,
                                     )
                                     Text(
                                         text = "PLAYFIT CURATION",
@@ -476,7 +453,6 @@ fun DecisionIntroScreen(
                         }
                     }
                 }
-            }
 
             Spacer(Modifier.height(PlayfitSpacing.xxl))
         }

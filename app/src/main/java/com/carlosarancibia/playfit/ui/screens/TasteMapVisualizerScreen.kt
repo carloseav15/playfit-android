@@ -3,6 +3,7 @@ package com.carlosarancibia.playfit.ui.screens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
-import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 
 data class GameNode(
     val id: String,
@@ -189,7 +189,7 @@ fun TasteMapVisualizerScreen(
                 ),
             )
         },
-        containerColor = PlayfitExtendedTheme.colors.playfitBackground,
+        containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         Box(
             modifier = Modifier
@@ -265,6 +265,7 @@ private fun AffinityMapCanvas(
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
+    val isDark = isSystemInDarkTheme()
     val textPaintSmall = remember(density) {
         android.graphics.Paint().apply {
             color = android.graphics.Color.GRAY
@@ -383,7 +384,7 @@ private fun AffinityMapCanvas(
                 val cx = centerX + (node.x / 100.0 * scale).toFloat()
                 val cy = centerY - (node.y / 100.0 * scale).toFloat()
                 val isSelected = node.id == activeNodeId
-                val color = nodeColor(node.type, false)
+                val color = nodeColor(node.type, isDark)
 
                 drawCircle(color = color.copy(alpha = if (isSelected) 0.35f else 0.15f),
                     radius = if (isSelected) 24f else 16f, center = Offset(cx, cy))
@@ -401,7 +402,7 @@ private fun MapNodeCard(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    val nodeCol = nodeColor(node.type, false)
+    val nodeCol = nodeColor(node.type, isSystemInDarkTheme())
 
     Card(
         modifier = Modifier

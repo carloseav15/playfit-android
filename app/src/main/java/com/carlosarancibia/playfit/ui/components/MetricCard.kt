@@ -1,5 +1,6 @@
 package com.carlosarancibia.playfit.ui.components
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -27,8 +28,7 @@ fun MetricCard(
     numericValue: Double? = null,
     barColor: Color = MaterialTheme.colorScheme.primary,
 ) {
-    val isDark = MaterialTheme.colorScheme.background.red < 0.2f
-    val bgColor = MaterialTheme.colorScheme.background
+    val isDark = isSystemInDarkTheme()
     val primaryColor = MaterialTheme.colorScheme.primary
 
     Box(

@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 
-private val boxRatio = 0.72f
+private val boxRatio = 0.75f
 
 private fun hashToHue(id: String): Float {
     var hash = 0
@@ -71,12 +71,16 @@ fun PlayfitCoverArt(
         coverUrl
     }
 
+    val loadingBackdrop = MaterialTheme.colorScheme.surfaceVariant
     Box(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(boxRatio)
-            .clip(RoundedCornerShape(16.dp))
-            .background(gradient),
+            .clip(RoundedCornerShape(8.dp))
+            .then(
+                if (resolvedUrl.isNullOrEmpty()) Modifier.background(gradient)
+                else Modifier.background(loadingBackdrop)
+            ),
         contentAlignment = Alignment.Center,
     ) {
         if (!resolvedUrl.isNullOrEmpty()) {

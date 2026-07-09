@@ -37,10 +37,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -78,11 +84,8 @@ import com.carlosarancibia.playfit.model.fallbackPlatforms
 import com.carlosarancibia.playfit.model.familyDisplayName
 import com.carlosarancibia.playfit.model.platformPresets
 import com.carlosarancibia.playfit.model.sortedPlatformFamilies
-import com.carlosarancibia.playfit.ui.components.design.GamepadIcon
 import com.carlosarancibia.playfit.ui.components.design.GlowBackground
-import com.carlosarancibia.playfit.ui.components.design.LaptopIcon
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
-import com.carlosarancibia.playfit.ui.components.design.TvIcon
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
@@ -134,7 +137,7 @@ fun CustomizePlatformsSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                androidx.compose.material3.Checkbox(
+                Checkbox(
                     checked = allSelected,
                     onCheckedChange = { onToggleAll() }
                 )
@@ -149,7 +152,12 @@ fun CustomizePlatformsSheet(
 
             val families = sortedPlatformFamilies(platforms)
             families.forEach { family ->
-                val familyPlatforms = platforms.filter { it.family == family }.sortedBy { it.sortOrder }
+                val familyPlatforms = if (family == "other") {
+                    val standard = com.carlosarancibia.playfit.model.platformStandardFamilies
+                    platforms.filter { it.family !in standard }.sortedBy { it.sortOrder }
+                } else {
+                    platforms.filter { it.family == family }.sortedBy { it.sortOrder }
+                }
                 if (familyPlatforms.isNotEmpty()) {
                     Text(
                         text = familyDisplayName(family).uppercase(),
@@ -207,9 +215,9 @@ fun CustomizePlatformsSheet(
             Button(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                    containerColor = PlayfitExtendedTheme.colors.playfitAccent,
+                shape = MaterialTheme.shapes.large,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
                 ),
             ) {
                 Text("Done", fontWeight = FontWeight.ExtraBold)
@@ -230,19 +238,16 @@ fun PlatformSelectionRow(
             .clickable { onToggle() }
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        Checkbox(
+            checked = isSelected,
+            onCheckedChange = { onToggle() }
+        )
         Text(
             text = platform.displayName,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground,
-        )
-        Text(
-            text = if (isSelected) "\u2713 Selected" else "+ Add",
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 13.sp,
-            color = if (isSelected) PlayfitExtendedTheme.colors.playfitPositive
-            else PlayfitExtendedTheme.colors.playfitAccent,
         )
     }
 }
@@ -310,7 +315,11 @@ fun GameSearchSheet(
                 trailingIcon = {
                     if (query.isNotEmpty()) {
                         IconButton(onClick = { onQueryChange("") }) {
-                            Text("\u2715", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear search",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                 },
@@ -414,7 +423,7 @@ fun GameSearchSheet(
 
                         val metadataParts = mutableListOf<String>()
                         if (game.primaryGenre.isNotBlank()) metadataParts.add(game.primaryGenre)
-                        if (!game.releaseYear.isNullOrBlank()) metadataParts.add(game.releaseYear)
+                        if (!game.releaseYear.isNullOrBlank() && game.releaseYear != "0") metadataParts.add(game.releaseYear)
                         if (game.availablePlatformNames.isNotEmpty()) {
                             val platformNames = game.availablePlatformNames.take(3).joinToString(", ")
                             val suffix = if (game.availablePlatformNames.size > 3) "..." else ""
@@ -428,8 +437,8 @@ fun GameSearchSheet(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .border(1.dp, rowBorderColor, RoundedCornerShape(12.dp))
+                                .clip(MaterialTheme.shapes.medium)
+                                .border(1.dp, rowBorderColor, MaterialTheme.shapes.medium)
                                 .background(
                                     if (isCurrentSelection) accentColor.copy(alpha = 0.08f)
                                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
@@ -442,7 +451,7 @@ fun GameSearchSheet(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             val coverUrl = game.externalCoverUrl ?: game.coverPath
-                            Box(modifier = Modifier.size(width = 40.dp, height = 56.dp)) {
+                            Box(modifier = Modifier.width(40.dp).aspectRatio(0.75f)) {
                                 PlayfitCoverArt(
                                     gameId = game.gameId,
                                     title = game.title,
@@ -482,17 +491,18 @@ fun GameSearchSheet(
                             }
 
                             if (isCurrentSelection) {
-                                Text(
-                                    text = "\u2713",
-                                    color = accentColor,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Currently selected",
+                                    tint = accentColor,
+                                    modifier = Modifier.size(16.dp),
                                 )
                             } else if (!isDisabled) {
-                                Text(
-                                    text = "\u2192",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                    fontSize = 16.sp
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(16.dp),
                                 )
                             }
                         }
