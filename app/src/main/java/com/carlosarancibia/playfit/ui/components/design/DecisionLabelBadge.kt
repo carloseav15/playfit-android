@@ -36,7 +36,7 @@ fun DecisionLabelBadge(
         fontWeight = FontWeight.SemiBold,
         color = foreground,
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(MaterialTheme.shapes.extraLarge)
             .background(foreground.copy(alpha = 0.15f))
             .padding(horizontal = 10.dp, vertical = 4.dp),
     )

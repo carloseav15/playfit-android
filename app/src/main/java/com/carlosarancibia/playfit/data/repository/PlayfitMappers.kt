@@ -303,4 +303,8 @@ internal fun ProductGameState.toRequest() = GameStateRequest(
     )
 
 internal fun String.toEpochMillisOrNow(): Long =
-        runCatching { Instant.parse(this).toEpochMilli() }.getOrElse { System.currentTimeMillis() }
+        runCatching { Instant.parse(this).toEpochMilli() }
+            .onFailure { error ->
+                android.util.Log.e("PlayfitMappers", "Failed to parse ISO date string: $this", error)
+            }
+            .getOrElse { System.currentTimeMillis() }

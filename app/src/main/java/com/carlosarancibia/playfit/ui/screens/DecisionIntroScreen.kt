@@ -156,8 +156,6 @@ fun DecisionIntroScreen(
                     Text(
                         text = "PLAYFIT",
                         style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 2.sp,
                         color = PlayfitExtendedTheme.colors.playfitAccent,
                     )
                 }
@@ -252,9 +250,9 @@ fun DecisionIntroScreen(
                         if (onSignIn != null) {
                             Spacer(Modifier.height(PlayfitSpacing.sm))
                             val signInContainerColor = if (isDark)
-                                Color(0xFF0F172A).copy(alpha = 0.70f)
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.70f)
                             else
-                                Color.White.copy(alpha = 0.72f)
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
 
                             Button(
                                 onClick = onSignIn,

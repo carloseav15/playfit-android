@@ -40,13 +40,6 @@ import com.carlosarancibia.playfit.model.ProductDecisionFeedback
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 
-private val options = listOf(
-    PlayedOption("Loved it", ProductDecisionFeedback.PlayedLoved, Icons.Default.Favorite, Color(0xFF10B981)),
-    PlayedOption("Liked it", ProductDecisionFeedback.PlayedLiked, Icons.Default.ThumbUp, Color(0xFF6366F1)),
-    PlayedOption("Mixed", ProductDecisionFeedback.PlayedMixed, Icons.Default.Star, Color(0xFFF59E0B)),
-    PlayedOption("Dropped it", ProductDecisionFeedback.PlayedDropped, Icons.Default.Close, Color(0xFFEF4444)),
-)
-
 private data class PlayedOption(
     val label: String,
     val feedback: ProductDecisionFeedback,
@@ -63,12 +56,22 @@ fun AlreadyPlayedDialog(
 ) {
     if (!open) return
 
+    val themeColors = PlayfitExtendedTheme.colors
+    val options = remember(themeColors) {
+        listOf(
+            PlayedOption("Loved it", ProductDecisionFeedback.PlayedLoved, Icons.Default.Favorite, themeColors.playfitPositive),
+            PlayedOption("Liked it", ProductDecisionFeedback.PlayedLiked, Icons.Default.ThumbUp, themeColors.playfitIndigo),
+            PlayedOption("Mixed", ProductDecisionFeedback.PlayedMixed, Icons.Default.Star, themeColors.playfitWarning),
+            PlayedOption("Dropped it", ProductDecisionFeedback.PlayedDropped, Icons.Default.Close, themeColors.playfitNegative),
+        )
+    }
+
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
     ) {
         Column(

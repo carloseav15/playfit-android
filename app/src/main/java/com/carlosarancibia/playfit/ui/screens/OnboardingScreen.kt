@@ -277,7 +277,7 @@ fun OnboardingScreen(
                         val indigoGradient = Brush.linearGradient(
                             colors = listOf(
                                 PlayfitExtendedTheme.colors.playfitAccent,
-                                Color(0xFF6366F1)
+                                PlayfitExtendedTheme.colors.playfitIndigo
                             )
                         )
                         val buttonBackground = if (canContinue) {

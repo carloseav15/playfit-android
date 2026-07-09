@@ -253,8 +253,8 @@ fun GameDossierScreen(
                                 }
                                 Box(
                                     modifier = Modifier
-                                        .background(color = bg, shape = RoundedCornerShape(8.dp))
-                                        .border(width = 1.dp, color = border, shape = RoundedCornerShape(8.dp))
+                                        .background(color = bg, shape = MaterialTheme.shapes.small)
+                                        .border(width = 1.dp, color = border, shape = MaterialTheme.shapes.small)
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
                                     Text(
@@ -302,12 +302,12 @@ fun GameDossierScreen(
                                 }
                                 
                                 Row(
-                                    modifier = Modifier
-                                        .background(color = bg, shape = RoundedCornerShape(8.dp))
-                                        .border(width = 1.dp, color = border, shape = RoundedCornerShape(8.dp))
-                                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                     modifier = Modifier
+                                         .background(color = bg, shape = MaterialTheme.shapes.small)
+                                         .border(width = 1.dp, color = border, shape = MaterialTheme.shapes.small)
+                                         .padding(horizontal = 8.dp, vertical = 4.dp),
+                                     verticalAlignment = Alignment.CenterVertically,
+                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     if (isOwned) {
                                         Icon(

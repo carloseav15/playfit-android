@@ -24,6 +24,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -138,7 +142,6 @@ fun DecisionsActivityContent(
                     label = {
                         Text(
                             text = label,
-                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                         )
                     },
@@ -256,13 +259,13 @@ private fun ActivityRow(
             )
         }
 
-        TextButton(
+        IconButton(
             onClick = { showManageDialog = true },
         ) {
-            Text(
-                text = "\u2026",
-                fontSize = 20.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = "Manage signal for ${entry.title}",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

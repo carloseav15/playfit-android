@@ -32,7 +32,7 @@ fun DossierActionBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = PlayfitSpacing.md, vertical = PlayfitSpacing.sm),
-        shape = RoundedCornerShape(18.dp),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
@@ -46,7 +46,7 @@ fun DossierActionBar(
                 onClick = onTogglePick,
                 enabled = !isSaving,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = PlayfitExtendedTheme.colors.playfitAccent,
                 ),

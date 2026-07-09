@@ -85,24 +85,23 @@ fun TraitPillCloud(
                 else -> FontWeight.Normal
             }
             
-            val size = when {
-                isStrong -> 13.sp
-                isMedium -> 12.sp
-                else -> 11.sp
+            val style = when {
+                isStrong -> MaterialTheme.typography.bodyMedium
+                isMedium -> MaterialTheme.typography.bodySmall
+                else -> MaterialTheme.typography.labelSmall
             }
 
             Row(
                 modifier = Modifier
-                    .background(color = bgCol, shape = RoundedCornerShape(20.dp))
-                    .border(width = 1.dp, color = borderCol, shape = RoundedCornerShape(20.dp))
+                    .background(color = bgCol, shape = MaterialTheme.shapes.extraLarge)
+                    .border(width = 1.dp, color = borderCol, shape = MaterialTheme.shapes.extraLarge)
                     .padding(horizontal = 12.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     text = trait.label,
-                    style = TextStyle(
-                        fontSize = size,
+                    style = style.copy(
                         fontWeight = weight,
                         color = textCol
                     )
@@ -111,14 +110,13 @@ fun TraitPillCloud(
                     modifier = Modifier
                         .background(
                             color = textCol.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(10.dp)
+                            shape = MaterialTheme.shapes.small
                         )
                         .padding(horizontal = 5.dp, vertical = 1.dp)
                 ) {
                     Text(
                         text = "${trait.strength.toInt()}",
-                        style = TextStyle(
-                            fontSize = 8.sp,
+                        style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
                             color = textCol
                         )

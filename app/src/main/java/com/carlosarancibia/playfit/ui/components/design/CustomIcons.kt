@@ -1,6 +1,7 @@
 package com.carlosarancibia.playfit.ui.components.design
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -11,64 +12,72 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SparklesIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val path = Path().apply {
-            moveTo(w / 2f, 0f)
-            quadraticTo(w / 2f, h / 2f, w, h / 2f)
-            quadraticTo(w / 2f, h / 2f, w / 2f, h)
-            quadraticTo(w / 2f, h / 2f, 0f, h / 2f)
-            quadraticTo(w / 2f, h / 2f, w / 2f, 0f)
-            close()
-        }
-        drawPath(path = path, color = color)
-    }
-}
-
-@Composable
-fun SunIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val center = Offset(w / 2f, h / 2f)
-        val radius = w * 0.25f
-        drawCircle(color = color, radius = radius, center = center)
-        val rayLength = w * 0.12f
-        val rayThickness = w * 0.06f
-        for (i in 0 until 8) {
-            val angle = i * Math.PI / 4
-            val startX = (w / 2f + Math.cos(angle) * (radius + 2.dp.toPx())).toFloat()
-            val startY = (h / 2f + Math.sin(angle) * (radius + 2.dp.toPx())).toFloat()
-            val endX = (w / 2f + Math.cos(angle) * (radius + 2.dp.toPx() + rayLength)).toFloat()
-            val endY = (h / 2f + Math.sin(angle) * (radius + 2.dp.toPx() + rayLength)).toFloat()
-            drawLine(
-                color = color,
-                start = Offset(startX, startY),
-                end = Offset(endX, endY),
-                strokeWidth = rayThickness,
-                cap = StrokeCap.Round
-            )
+fun SparklesIcon(modifier: Modifier = Modifier, color: Color, contentDescription: String? = null) {
+    Box(modifier = modifier.semantics { if (contentDescription != null) this.contentDescription = contentDescription }) {
+        Canvas(modifier = Modifier.matchParentSize()) {
+            val w = size.width
+            val h = size.height
+            val path = Path().apply {
+                moveTo(w / 2f, 0f)
+                quadraticTo(w / 2f, h / 2f, w, h / 2f)
+                quadraticTo(w / 2f, h / 2f, w / 2f, h)
+                quadraticTo(w / 2f, h / 2f, 0f, h / 2f)
+                quadraticTo(w / 2f, h / 2f, w / 2f, 0f)
+                close()
+            }
+            drawPath(path = path, color = color)
         }
     }
 }
 
 @Composable
-fun MoonIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val path = Path().apply {
-            moveTo(w * 0.35f, h * 0.15f)
-            cubicTo(w * 0.85f, h * 0.15f, w * 0.85f, h * 0.85f, w * 0.35f, h * 0.85f)
-            cubicTo(w * 0.65f, h * 0.70f, w * 0.65f, h * 0.30f, w * 0.35f, h * 0.15f)
-            close()
+fun SunIcon(modifier: Modifier = Modifier, color: Color, contentDescription: String? = null) {
+    Box(modifier = modifier.semantics { if (contentDescription != null) this.contentDescription = contentDescription }) {
+        Canvas(modifier = Modifier.matchParentSize()) {
+            val w = size.width
+            val h = size.height
+            val center = Offset(w / 2f, h / 2f)
+            val radius = w * 0.25f
+            drawCircle(color = color, radius = radius, center = center)
+            val rayLength = w * 0.12f
+            val rayThickness = w * 0.06f
+            for (i in 0 until 8) {
+                val angle = i * Math.PI / 4
+                val startX = (w / 2f + Math.cos(angle) * (radius + 2.dp.toPx())).toFloat()
+                val startY = (h / 2f + Math.sin(angle) * (radius + 2.dp.toPx())).toFloat()
+                val endX = (w / 2f + Math.cos(angle) * (radius + 2.dp.toPx() + rayLength)).toFloat()
+                val endY = (h / 2f + Math.sin(angle) * (radius + 2.dp.toPx() + rayLength)).toFloat()
+                drawLine(
+                    color = color,
+                    start = Offset(startX, startY),
+                    end = Offset(endX, endY),
+                    strokeWidth = rayThickness,
+                    cap = StrokeCap.Round
+                )
+            }
         }
-        drawPath(path = path, color = color)
+    }
+}
+
+@Composable
+fun MoonIcon(modifier: Modifier = Modifier, color: Color, contentDescription: String? = null) {
+    Box(modifier = modifier.semantics { if (contentDescription != null) this.contentDescription = contentDescription }) {
+        Canvas(modifier = Modifier.matchParentSize()) {
+            val w = size.width
+            val h = size.height
+            val path = Path().apply {
+                moveTo(w * 0.35f, h * 0.15f)
+                cubicTo(w * 0.85f, h * 0.15f, w * 0.85f, h * 0.85f, w * 0.35f, h * 0.85f)
+                cubicTo(w * 0.65f, h * 0.70f, w * 0.65f, h * 0.30f, w * 0.35f, h * 0.15f)
+                close()
+            }
+            drawPath(path = path, color = color)
+        }
     }
 }
 

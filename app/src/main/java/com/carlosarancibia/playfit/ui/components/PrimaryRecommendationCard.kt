@@ -130,7 +130,7 @@ fun PrimaryRecommendationCard(
                 onClick = onAddPick,
                 enabled = !isPicked,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = PlayfitExtendedTheme.colors.playfitAccent,
                 ),

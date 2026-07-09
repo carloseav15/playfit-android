@@ -123,7 +123,6 @@ fun TasteScreen(
             Text(
                 text = "Your Taste",
                 style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.onBackground,
             )
 
@@ -142,7 +141,6 @@ fun TasteScreen(
                                     TasteTab.YourTaste -> "Your Taste"
                                     TasteTab.Activity -> "Activity"
                                 },
-                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                             )
                         },

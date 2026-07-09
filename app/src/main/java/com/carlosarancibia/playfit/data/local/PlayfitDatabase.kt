@@ -21,7 +21,7 @@ import com.carlosarancibia.playfit.data.local.entity.PicksEntity
         PendingOperationEntity::class,
     ],
     version = 3,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class PlayfitDatabase : RoomDatabase() {
     abstract fun gameStateDao(): GameStateDao

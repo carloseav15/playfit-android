@@ -33,7 +33,7 @@ fun FeedbackChips(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ),
@@ -58,7 +58,6 @@ fun FeedbackChips(
                         label = {
                             Text(
                                 text = label,
-                                style = MaterialTheme.typography.labelSmall,
                             )
                         },
                         colors = FilterChipDefaults.filterChipColors(

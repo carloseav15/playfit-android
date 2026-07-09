@@ -50,7 +50,7 @@ android {
             buildConfigField("String", "BUILD_ENVIRONMENT", "\"development\"")
         }
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
         }
     }
 
@@ -128,4 +128,8 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+ksp {
+    arg("room.schemaLocation", "${projectDir}/schemas")
 }

@@ -95,8 +95,8 @@ fun PlayfitCoverArt(
         } else {
             androidx.compose.material3.Text(
                 text = initials(title),
-                color = Color.White.copy(alpha = 0.8f),
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimary,
                 fontWeight = FontWeight.Black,
                 textAlign = TextAlign.Center,
                 letterSpacing = 0.15.sp,

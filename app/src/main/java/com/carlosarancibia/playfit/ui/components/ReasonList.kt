@@ -18,6 +18,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -31,8 +34,8 @@ enum class ReasonTone {
 @Composable
 fun ReasonTone.colors(): Pair<Color, Color> {
     return when (this) {
-        ReasonTone.Accent -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.primary
-        ReasonTone.Warning -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.error
+        ReasonTone.Accent -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.tertiary
+        ReasonTone.Warning -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.errorContainer
         ReasonTone.Muted -> MaterialTheme.colorScheme.onSurfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
     }
 }
@@ -52,24 +55,19 @@ fun ReasonList(
     val isDark = isSystemInDarkTheme()
     val primaryColor = MaterialTheme.colorScheme.primary
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .drawBehind {
-                drawRoundRect(
-                    color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.70f)
-                    else Color.White.copy(alpha = 0.72f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(20.dp.toPx()),
-                )
-                drawRoundRect(
-                    color = primaryColor.copy(alpha = if (isDark) 0.18f else 0.10f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(20.dp.toPx()),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx()),
-                )
-            }
-            .padding(16.dp),
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
     ) {
-        Column {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.labelSmall,

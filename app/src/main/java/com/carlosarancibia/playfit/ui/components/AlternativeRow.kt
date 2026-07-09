@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,23 +91,12 @@ fun AlternativeRow(
                 )
             }
             
-            // Programmatic vector chevron
-            androidx.compose.foundation.Canvas(modifier = Modifier.size(16.dp)) {
-                val path = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(size.width * 0.35f, size.height * 0.2f)
-                    lineTo(size.width * 0.65f, size.height * 0.5f)
-                    lineTo(size.width * 0.35f, size.height * 0.8f)
-                }
-                drawPath(
-                    path = path,
-                    color = chevronColor,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(
-                        width = 2.dp.toPx(),
-                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                        join = androidx.compose.ui.graphics.StrokeJoin.Round
-                    )
-                )
-            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "View details",
+                modifier = Modifier.size(16.dp),
+                tint = chevronColor
+            )
         }
     }
 }

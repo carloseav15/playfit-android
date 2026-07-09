@@ -177,7 +177,6 @@ fun AuthScreen(
             Text(
                 text = heading,
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Black,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onBackground,
             )
@@ -258,7 +257,7 @@ fun AuthScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                        shape = MaterialTheme.shapes.medium,
                         enabled = !busy,
                     ) {
                         Text(
@@ -279,7 +278,7 @@ fun AuthScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                        shape = MaterialTheme.shapes.medium,
                         enabled = !busy,
                     ) {
                         Text(
@@ -311,7 +310,7 @@ fun AuthScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                        shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
                         ),
@@ -357,7 +356,7 @@ fun AuthScreen(
                                 imeAction = ImeAction.Next,
                             ),
                             modifier = Modifier.fillMaxWidth(),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                            shape = MaterialTheme.shapes.medium,
                             colors = OutlinedTextFieldDefaults.colors(),
                             enabled = !busy,
                         )
@@ -378,7 +377,7 @@ fun AuthScreen(
                                 },
                             ),
                             modifier = Modifier.fillMaxWidth(),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                            shape = MaterialTheme.shapes.medium,
                             colors = OutlinedTextFieldDefaults.colors(),
                             enabled = !busy,
                         )
@@ -390,7 +389,7 @@ fun AuthScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(44.dp),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                            shape = MaterialTheme.shapes.medium,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = PlayfitExtendedTheme.colors.playfitAccent,
                             ),

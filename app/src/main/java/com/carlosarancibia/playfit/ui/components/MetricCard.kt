@@ -13,6 +13,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -31,24 +34,19 @@ fun MetricCard(
     val isDark = isSystemInDarkTheme()
     val primaryColor = MaterialTheme.colorScheme.primary
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .drawBehind {
-                drawRoundRect(
-                    color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.70f)
-                    else Color.White.copy(alpha = 0.72f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(14.dp.toPx()),
-                )
-                drawRoundRect(
-                    color = primaryColor.copy(alpha = if (isDark) 0.18f else 0.10f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(14.dp.toPx()),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx()),
-                )
-            }
-            .padding(12.dp),
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,

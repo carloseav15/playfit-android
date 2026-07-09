@@ -26,9 +26,9 @@ fun ScoreBadge(
         fontWeight = FontWeight.SemiBold,
         // playfitInk is light-to-mid toned in both themes (WCAG-checked against
         // #0d9488 light / #38bdf8 dark), so a fixed dark navy passes AA on both.
-        color = Color(0xFF0F172A),
+        color = MaterialTheme.colorScheme.onSurface,
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(MaterialTheme.shapes.extraLarge)
             .background(PlayfitExtendedTheme.colors.playfitInk)
             .padding(horizontal = 10.dp, vertical = 6.dp),
     )

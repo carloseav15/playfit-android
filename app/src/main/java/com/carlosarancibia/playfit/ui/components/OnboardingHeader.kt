@@ -86,7 +86,7 @@ fun OnboardingHeader(
                         val activeBrush = Brush.linearGradient(
                             colors = listOf(
                                 PlayfitExtendedTheme.colors.playfitAccent,
-                                Color(0xFFEC4899)
+                                PlayfitExtendedTheme.colors.playfitToneAccent
                             )
                         )
                         Box(
@@ -108,14 +108,14 @@ fun OnboardingHeader(
 
                 Text(
                     text = label.uppercase(),
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Black,
                     color = labelColor,
                     letterSpacing = 0.5.sp
                 )
                 Text(
                     text = count,
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     fontWeight = FontWeight.Medium
                 )

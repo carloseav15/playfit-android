@@ -148,10 +148,9 @@ fun SplashScreen(
             Text(
                 text = "Playfit",
                 style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Black,
-                    color = MaterialTheme.colorScheme.onBackground,
                     letterSpacing = 0.5.sp,
                 ),
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.alpha(titleOpacity),
             )
         }

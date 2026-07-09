@@ -1,5 +1,9 @@
 package com.carlosarancibia.playfit.ui.theme
 
+import android.os.Build
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -65,7 +69,7 @@ object PlayfitExtendedTheme {
 private val LightColors = lightColorScheme(
     primary = Color(0xFF0F766E),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFF0F766E).copy(alpha = 0.12f),
+    primaryContainer = Color(0xFFE0F2F1),
     onPrimaryContainer = Color(0xFF0F766E),
     secondary = Color(0xFF0369A1),
     onSecondary = Color(0xFFFFFFFF),
@@ -79,22 +83,22 @@ private val LightColors = lightColorScheme(
     surfaceVariant = Color(0xFFE2E8F0),
     onSurfaceVariant = Color(0xFF475569),
     surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFF1F5F9),
-    surfaceContainer = Color(0xFFE2E8F0),
-    surfaceContainerHigh = Color(0xFFCBD5E1),
-    surfaceContainerHighest = Color(0xFF94A3B8),
+    surfaceContainerLow = Color(0xFFF0F4F4),
+    surfaceContainer = Color(0xFFE0E8E8),
+    surfaceContainerHigh = Color(0xFFD0DCDD),
+    surfaceContainerHighest = Color(0xFFBFCFD1),
     outline = Color(0xFFCBD5E1),
     outlineVariant = Color(0xFFE2E8F0),
     error = Color(0xFFBE123C),
     onError = Color(0xFFFFFFFF),
-    errorContainer = Color(0xFFBE123C).copy(alpha = 0.12f),
+    errorContainer = Color(0xFFFFDAD6),
     onErrorContainer = Color(0xFFBE123C),
 )
 
 private val DarkColors = darkColorScheme(
     primary = Color(0xFFFF6A3D),
     onPrimary = Color(0xFF070A12),
-    primaryContainer = Color(0xFFFF6A3D).copy(alpha = 0.15f),
+    primaryContainer = Color(0xFF7E2D12),
     onPrimaryContainer = Color(0xFFFF6A3D),
     secondary = Color(0xFF7DD3FC),
     onSecondary = Color(0xFF070A12),
@@ -108,15 +112,15 @@ private val DarkColors = darkColorScheme(
     surfaceVariant = Color(0xFF1E293B),
     onSurfaceVariant = Color(0xFF94A3B8),
     surfaceContainerLowest = Color(0xFF0F172A),
-    surfaceContainerLow = Color(0xFF0F172A),
-    surfaceContainer = Color(0xFF1E293B),
-    surfaceContainerHigh = Color(0xFF334155),
-    surfaceContainerHighest = Color(0xFF475569),
+    surfaceContainerLow = Color(0xFF131922),
+    surfaceContainer = Color(0xFF1A212E),
+    surfaceContainerHigh = Color(0xFF242C3C),
+    surfaceContainerHighest = Color(0xFF30384B),
     outline = Color(0xFF334155),
     outlineVariant = Color(0xFF1E293B),
     error = Color(0xFFFB7185),
     onError = Color(0xFF070A12),
-    errorContainer = Color(0xFFFB7185).copy(alpha = 0.15f),
+    errorContainer = Color(0xFF93000A),
     onErrorContainer = Color(0xFFFB7185),
 )
 
@@ -125,21 +129,21 @@ val PlayfitTypography = Typography(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Black,
         fontSize = 34.sp,
-        lineHeight = 38.sp,
+        lineHeight = 44.sp,
         letterSpacing = (-1.0).sp
     ),
     headlineMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Black,
         fontSize = 28.sp,
-        lineHeight = 32.sp,
+        lineHeight = 36.sp,
         letterSpacing = (-0.5).sp
     ),
     headlineSmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Black,
         fontSize = 24.sp,
-        lineHeight = 28.sp,
+        lineHeight = 32.sp,
         letterSpacing = (-0.25).sp
     ),
     titleLarge = TextStyle(
@@ -211,12 +215,21 @@ val PlayfitShapes = Shapes(
 @Composable
 fun PlayfitTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {
+    val context = LocalContext.current
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        darkTheme -> DarkColors
+        else -> LightColors
+    }
     val extendedColors = if (darkTheme) darkExtended else lightExtended
     CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
         MaterialTheme(
-            colorScheme = if (darkTheme) DarkColors else LightColors,
+            colorScheme = colorScheme,
             typography = PlayfitTypography,
             shapes = PlayfitShapes,
             content = content,

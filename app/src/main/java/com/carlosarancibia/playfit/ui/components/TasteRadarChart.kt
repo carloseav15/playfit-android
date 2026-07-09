@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import com.carlosarancibia.playfit.model.ProductTasteMapTrait
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 
 @Composable
 fun TasteRadarChart(
@@ -56,6 +58,9 @@ fun TasteRadarChart(
         modifier = modifier
             .fillMaxWidth()
             .height(240.dp)
+            .semantics {
+                contentDescription = "Radar chart: ${radarTraits.joinToString { t -> "${t.label} ${t.strength.toInt()}%" }}"
+            }
     ) {
         val center = Offset(size.width / 2f, size.height / 2f)
         val radius = size.height * 0.33f

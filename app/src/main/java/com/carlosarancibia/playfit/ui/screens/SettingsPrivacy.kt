@@ -105,26 +105,23 @@ fun PrivacySettingsView(
             }
         }
 
-        SettingsSection(title = "Delete Cloud Account") {
-            Text(
-                text = if (canDeleteAccount) {
-                    "Permanently deletes your cloud Playfit profile, including synchronized taste, picks, and decision history. Your sign-in credentials are managed by your auth provider and are not deleted here."
-                } else {
-                    "Cloud account deletion is not available in the Android app yet. You can still reset taste data on this device and sign out from the Account section."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(PlayfitSpacing.sm))
-            OutlinedButton(
-                onClick = { showDelete = true },
-                enabled = canDeleteAccount,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = PlayfitExtendedTheme.colors.playfitNegative,
-                ),
-            ) {
-                Text(if (canDeleteAccount) "Delete Account" else "Delete unavailable", fontWeight = FontWeight.Bold)
+        if (canDeleteAccount) {
+            SettingsSection(title = "Delete Cloud Account") {
+                Text(
+                    text = "Permanently deletes your cloud Playfit profile, including synchronized taste, picks, and decision history. Your sign-in credentials are managed by your auth provider and are not deleted here.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(PlayfitSpacing.sm))
+                OutlinedButton(
+                    onClick = { showDelete = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = PlayfitExtendedTheme.colors.playfitNegative,
+                    ),
+                ) {
+                    Text("Delete Account", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
