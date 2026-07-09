@@ -20,10 +20,12 @@ import com.carlosarancibia.playfit.model.ProductPlayStatus
 import com.carlosarancibia.playfit.model.ProductState
 import com.carlosarancibia.playfit.model.RankedSeedGame
 import com.carlosarancibia.playfit.model.SeedGame
+import io.github.jan.supabase.auth.user.UserSession
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -66,6 +68,7 @@ class PlayfitViewModelTest {
             isAnonymous = true,
         )
         every { authManager.session } returns MutableStateFlow(restoredSession)
+        every { authManager.pendingPasswordRecovery } returns MutableStateFlow(null)
         coEvery { authManager.restoreSession() } returns restoredSession
         coEvery { authManager.signInAnonymously() } returns AuthResult.Success(restoredSession)
         coEvery { repository.getState() } returns success(ProductState())
@@ -116,6 +119,39 @@ class PlayfitViewModelTest {
 
         coVerify(exactly = 0) { authManager.deleteAccount() }
         assertEquals("Cloud account deletion is not available in the Android app yet.", viewModel.ui.value.toast)
+    }
+
+    @Test
+    fun `pendingPasswordRecovery mirrors AuthManager state`() = runTest(testDispatcher) {
+        val recoverySession = mockk<UserSession>(relaxed = true)
+        every { authManager.pendingPasswordRecovery } returns MutableStateFlow(recoverySession)
+
+        val model = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(recoverySession, model.pendingPasswordRecovery.value)
+    }
+
+    @Test
+    fun `updatePassword delegates to AuthManager`() = runTest(testDispatcher) {
+        advanceUntilIdle()
+        coEvery { authManager.updatePassword("newPass123") } returns AuthResult.Success(
+            AuthSessionInfo(userId = "user-1", email = "user@example.com", isAnonymous = false),
+        )
+
+        val result = viewModel.updatePassword("newPass123")
+
+        coVerify { authManager.updatePassword("newPass123") }
+        assertTrue(result is AuthResult.Success)
+    }
+
+    @Test
+    fun `cancelPendingPasswordRecovery delegates to AuthManager`() = runTest(testDispatcher) {
+        advanceUntilIdle()
+
+        viewModel.cancelPendingPasswordRecovery()
+
+        verify { authManager.cancelPendingPasswordRecovery() }
     }
 
     @After

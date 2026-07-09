@@ -68,6 +68,7 @@ import com.carlosarancibia.playfit.ui.screens.GameDossierScreen
 import com.carlosarancibia.playfit.ui.screens.OnboardingScreen
 import com.carlosarancibia.playfit.ui.screens.PicksScreen
 import com.carlosarancibia.playfit.ui.screens.PlayNextScreen
+import com.carlosarancibia.playfit.ui.screens.ResetPasswordScreen
 import com.carlosarancibia.playfit.ui.screens.SettingsScreen
 import com.carlosarancibia.playfit.ui.screens.SplashScreen
 import com.carlosarancibia.playfit.ui.screens.GameNode
@@ -118,6 +119,7 @@ fun PlayfitApp(
     val onboardingCompleted by viewModel.onboardingCompleted.collectAsState()
     val authState by viewModel.authState.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
+    val pendingPasswordRecovery by viewModel.pendingPasswordRecovery.collectAsState()
 
     var showOnboarding by remember { mutableStateOf(false) }
     var showAuth by remember { mutableStateOf(false) }
@@ -173,6 +175,21 @@ fun PlayfitApp(
                         viewModel.resetPassword(email)
                     },
                     isAnonymous = authState.isAnonymous,
+                )
+            }
+        }
+    }
+
+    if (pendingPasswordRecovery != null) {
+        Dialog(
+            onDismissRequest = { viewModel.cancelPendingPasswordRecovery() },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                ResetPasswordScreen(
+                    onSubmit = { newPassword -> viewModel.updatePassword(newPassword) },
+                    onCancel = { viewModel.cancelPendingPasswordRecovery() },
+                    onSuccess = {},
                 )
             }
         }

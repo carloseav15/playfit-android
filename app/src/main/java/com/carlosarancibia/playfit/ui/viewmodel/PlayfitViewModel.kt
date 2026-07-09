@@ -77,6 +77,7 @@ class PlayfitViewModel @Inject constructor(
         setError = { message -> _ui.value = _ui.value.copy(error = message) },
     )
     val authState: StateFlow<AuthState> = authCoordinator.state
+    val pendingPasswordRecovery = authCoordinator.pendingPasswordRecovery
 
     private val playNextQueueCoordinator = PlayNextQueueCoordinator()
     private val initialDataCoordinator = InitialDataCoordinator(
@@ -239,6 +240,11 @@ class PlayfitViewModel @Inject constructor(
     suspend fun signInAsGuest(): AuthResult = authCoordinator.signInAsGuest()
 
     suspend fun signOut(): AuthResult = authCoordinator.signOut()
+
+    suspend fun updatePassword(newPassword: String): AuthResult =
+        authCoordinator.updatePassword(newPassword)
+
+    fun cancelPendingPasswordRecovery() = authCoordinator.cancelPendingPasswordRecovery()
 
     fun completeOnboarding(draft: ProductOnboardingDraft? = null) {
         viewModelScope.launch {

@@ -31,6 +31,29 @@ sealed class AuthResult {
     data class Error(val message: String) : AuthResult()
 }
 
+/**
+ * Supabase's password-recovery redirect marks itself with `type=recovery`, either as a query
+ * parameter (PKCE-style callback, e.g. `playfit://auth-callback?code=...&type=recovery`) or inside
+ * the URL fragment (implicit-style callback, e.g. `playfit://auth-callback#access_token=...&type=recovery`).
+ * `Uri.getFragment()` returns the raw fragment string with no built-in param parser, so both the
+ * query and the fragment are parsed the same way here. Pure string parsing (no android.net.Uri) so
+ * this stays unit-testable on the JVM without Robolectric.
+ */
+internal fun isPasswordRecoveryLink(query: String?, fragment: String?): Boolean {
+    return containsRecoveryType(query) || containsRecoveryType(fragment)
+}
+
+private fun containsRecoveryType(rawParams: String?): Boolean {
+    if (rawParams.isNullOrEmpty()) return false
+    return rawParams.split("&").any { pair ->
+        val separator = pair.indexOf('=')
+        if (separator <= 0) return@any false
+        val key = pair.substring(0, separator)
+        val value = pair.substring(separator + 1)
+        key == "type" && value == "recovery"
+    }
+}
+
 @Singleton
 class AuthManager @Inject constructor(
     private val deviceIdProvider: DeviceIdProvider,
@@ -39,6 +62,12 @@ class AuthManager @Inject constructor(
 
     private val _session = MutableStateFlow<AuthSessionInfo?>(null)
     val session: StateFlow<AuthSessionInfo?> = _session.asStateFlow()
+
+    private val _pendingPasswordRecovery = MutableStateFlow<UserSession?>(null)
+    val pendingPasswordRecovery: StateFlow<UserSession?> = _pendingPasswordRecovery.asStateFlow()
+
+    @Volatile
+    private var expectingPasswordRecoverySession = false
 
     @Volatile
     private var _cachedAccessToken: String? = null
@@ -63,13 +92,38 @@ class AuthManager @Inject constructor(
         scope.launch {
             supabase.auth.sessionStatus.collect { status ->
                 when (status) {
-                    is SessionStatus.Authenticated -> applySession(status.session)
+                    is SessionStatus.Authenticated -> {
+                        if (expectingPasswordRecoverySession) {
+                            expectingPasswordRecoverySession = false
+                            _pendingPasswordRecovery.value = status.session
+                        } else {
+                            applySession(status.session)
+                        }
+                    }
                     is SessionStatus.NotAuthenticated,
                     is SessionStatus.RefreshFailure -> clearSessionSnapshot()
                     SessionStatus.Initializing -> Unit
                 }
             }
         }
+    }
+
+    /**
+     * Called from MainActivity with the incoming deep-link's raw query and fragment strings,
+     * before (or alongside) `supabase.handleDeeplinks(intent)`. If they indicate a password-recovery
+     * callback, the next `SessionStatus.Authenticated` emission is routed into
+     * [pendingPasswordRecovery] instead of being treated as a normal sign-in.
+     */
+    fun markPendingPasswordRecovery(query: String?, fragment: String?) {
+        if (isPasswordRecoveryLink(query, fragment)) {
+            expectingPasswordRecoverySession = true
+        }
+    }
+
+    /** Dismisses the recovery flow without completing it (e.g. the user cancels the screen). */
+    fun cancelPendingPasswordRecovery() {
+        expectingPasswordRecoverySession = false
+        _pendingPasswordRecovery.value = null
     }
 
     suspend fun restoreSession(): AuthSessionInfo? {
@@ -147,6 +201,19 @@ class AuthManager @Inject constructor(
             AuthResult.Pending("Check your email for the password reset link.")
         } catch (error: Exception) {
             AuthResult.Error(error.message ?: "Password reset failed.")
+        }
+    }
+
+    suspend fun updatePassword(newPassword: String): AuthResult {
+        return try {
+            supabase.auth.updateUser {
+                password = newPassword
+            }
+            val recoverySession = _pendingPasswordRecovery.value
+            _pendingPasswordRecovery.value = null
+            AuthResult.Success(applySession(recoverySession ?: requireCurrentSession()))
+        } catch (error: Exception) {
+            AuthResult.Error(error.message ?: "Could not update password.")
         }
     }
 

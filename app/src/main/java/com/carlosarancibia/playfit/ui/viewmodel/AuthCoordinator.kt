@@ -3,6 +3,7 @@ package com.carlosarancibia.playfit.ui.viewmodel
 import com.carlosarancibia.playfit.data.auth.AuthManager
 import com.carlosarancibia.playfit.data.auth.AuthResult
 import com.carlosarancibia.playfit.data.auth.AuthSessionInfo
+import io.github.jan.supabase.auth.user.UserSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +28,8 @@ internal class AuthCoordinator(
 ) {
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
+
+    val pendingPasswordRecovery: StateFlow<UserSession?> = authManager.pendingPasswordRecovery
 
     fun observeSession() {
         scope.launch {
@@ -94,6 +97,9 @@ internal class AuthCoordinator(
     suspend fun resetPassword(email: String): AuthResult = authManager.resetPassword(email)
     suspend fun signInAsGuest(): AuthResult = authManager.signInAnonymously()
     suspend fun signOut(): AuthResult = authManager.signOut()
+    suspend fun updatePassword(newPassword: String): AuthResult =
+        authManager.updatePassword(newPassword)
+    fun cancelPendingPasswordRecovery() = authManager.cancelPendingPasswordRecovery()
 
     private fun AuthSessionInfo?.toAuthState(): AuthState = AuthState(
         isAuthenticated = this != null,

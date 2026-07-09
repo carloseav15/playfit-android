@@ -22,6 +22,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handlePasswordRecoveryIfPresent(intent)
         authManager.supabase.handleDeeplinks(intent)
         enableEdgeToEdge()
         setContent {
@@ -40,6 +41,18 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        handlePasswordRecoveryIfPresent(intent)
         authManager.supabase.handleDeeplinks(intent)
+    }
+
+    /**
+     * Supabase's password-recovery deep link is indistinguishable from a normal auth callback once
+     * `handleDeeplinks` consumes it, so the raw `type=recovery` marker (query param or fragment) has
+     * to be inspected here first and handed to AuthManager before the SDK parses tokens and emits an
+     * authenticated session.
+     */
+    private fun handlePasswordRecoveryIfPresent(intent: Intent) {
+        val uri = intent.data ?: return
+        authManager.markPendingPasswordRecovery(query = uri.query, fragment = uri.fragment)
     }
 }
