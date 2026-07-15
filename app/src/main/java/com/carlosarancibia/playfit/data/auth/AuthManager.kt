@@ -198,7 +198,7 @@ class AuthManager @Inject constructor(
                 email = email,
                 redirectUrl = BuildConfig.AUTH_REDIRECT_URL,
             )
-            AuthResult.Pending("Check your email for the password reset link.")
+            AuthResult.Pending("If that email is registered, you'll receive a reset link shortly.")
         } catch (error: Exception) {
             AuthResult.Error(error.message ?: "Password reset failed.")
         }
@@ -225,12 +225,6 @@ class AuthManager @Inject constructor(
         } catch (error: Exception) {
             AuthResult.Error(error.message ?: "Sign out failed")
         }
-    }
-
-    suspend fun deleteAccount(): AuthResult {
-        return AuthResult.Error(
-            "Account deletion requires the authorized Playfit backend endpoint and is not available yet.",
-        )
     }
 
     suspend fun getAccessToken(): String? {

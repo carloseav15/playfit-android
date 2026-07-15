@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +58,16 @@ import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import kotlinx.coroutines.launch
 
 enum class AuthView { Options, SignIn, SignUp }
+private enum class AuthAction { Google, Guest, Email }
+
+internal const val PASSWORD_RESET_NON_ENUMERATIVE_MESSAGE =
+    "If that email is registered, you'll receive a reset link shortly."
+
+internal fun validateAuthInput(email: String, password: String): String? = when {
+    email.isBlank() || !email.contains("@") -> "Please enter a valid email address."
+    password.length < 6 -> "Password must be at least 6 characters."
+    else -> null
+}
 
 @Composable
 fun AuthScreen(
@@ -73,7 +84,8 @@ fun AuthScreen(
     var password by rememberSaveable { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var success by remember { mutableStateOf<String?>(null) }
-    var busy by remember { mutableStateOf(false) }
+    var busyAction by remember { mutableStateOf<AuthAction?>(null) }
+    val busy = busyAction != null
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
 
@@ -82,18 +94,24 @@ fun AuthScreen(
         if (busy) return
         error = null
         success = null
-        busy = true
+        val trimmedEmail = email.trim()
+        val validationError = validateAuthInput(trimmedEmail, password)
+        if (validationError != null) {
+            error = validationError
+            return
+        }
+        busyAction = AuthAction.Email
         val result = if (view == AuthView.SignUp) {
-            onEmailSignUp(email.trim(), password)
+            onEmailSignUp(trimmedEmail, password)
         } else {
-            onEmailSignIn(email.trim(), password)
+            onEmailSignIn(trimmedEmail, password)
         }
         when (result) {
             is AuthResult.Success -> onDismiss()
             is AuthResult.Pending -> success = result.message
             is AuthResult.Error -> error = result.message
         }
-        busy = false
+        busyAction = null
     }
 
     Box(
@@ -243,14 +261,14 @@ fun AuthScreen(
                                 if (busy) return@launch
                                 error = null
                                 success = null
-                                busy = true
+                                busyAction = AuthAction.Google
                                 val result = onGoogleSignIn()
                                 when (result) {
                                     is AuthResult.Success -> onDismiss()
                                     is AuthResult.Pending -> success = result.message
                                     is AuthResult.Error -> error = result.message
                                 }
-                                busy = false
+                                busyAction = null
                             }
                         },
                         modifier = Modifier
@@ -259,11 +277,7 @@ fun AuthScreen(
                         shape = MaterialTheme.shapes.medium,
                         enabled = !busy,
                     ) {
-                        Text(
-                            text = "Continue with Google",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 13.sp,
-                        )
+                        AuthButtonLabel(text = "Continue with Google", busy = busyAction == AuthAction.Google)
                     }
 
                     Spacer(Modifier.height(PlayfitSpacing.sm))
@@ -316,14 +330,14 @@ fun AuthScreen(
                                     if (busy) return@launch
                                     error = null
                                     success = null
-                                    busy = true
+                                    busyAction = AuthAction.Guest
                                     val result = onGuestSignIn()
                                     when (result) {
                                         is AuthResult.Success -> onDismiss()
                                         is AuthResult.Pending -> success = result.message
                                         is AuthResult.Error -> error = result.message
                                     }
-                                    busy = false
+                                    busyAction = null
                                 }
                             },
                             modifier = Modifier
@@ -335,11 +349,7 @@ fun AuthScreen(
                             ),
                             enabled = !busy,
                         ) {
-                            Text(
-                                text = "Continue as Guest",
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 13.sp,
-                            )
+                            AuthButtonLabel(text = "Continue as Guest", busy = busyAction == AuthAction.Guest)
                         }
                     }
 
@@ -415,13 +425,10 @@ fun AuthScreen(
                             ),
                             enabled = !busy,
                         ) {
-                            Text(
-                                text = if (view == AuthView.SignUp) {
-                                    if (busy) "Creating account\u2026" else "Create Account"
-                                } else {
-                                    if (busy) "Signing in\u2026" else "Sign In"
-                                },
-                                fontWeight = FontWeight.ExtraBold,
+                            AuthButtonLabel(
+                                text = if (view == AuthView.SignUp) "Create Account" else "Sign In",
+                                busy = busyAction == AuthAction.Email,
+                                busyText = if (view == AuthView.SignUp) "Creating account…" else "Signing in…",
                             )
                         }
 
@@ -433,12 +440,10 @@ fun AuthScreen(
                                         return@TextButton
                                     }
                                     scope.launch {
-                                        val result = onResetPassword(email)
-                                        when (result) {
-                                            is AuthResult.Success -> {
-                                                success = "If that email is registered, you'll receive a reset link shortly."
+                                        when (val result = onResetPassword(email)) {
+                                            is AuthResult.Success, is AuthResult.Pending -> {
+                                                success = PASSWORD_RESET_NON_ENUMERATIVE_MESSAGE
                                             }
-                                            is AuthResult.Pending -> success = result.message
                                             is AuthResult.Error -> error = result.message
                                         }
                                     }
@@ -475,5 +480,27 @@ fun AuthScreen(
 
             Spacer(Modifier.height(PlayfitSpacing.xxl))
         }
+    }
+}
+
+@Composable
+private fun AuthButtonLabel(
+    text: String,
+    busy: Boolean,
+    busyText: String = text,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (busy) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+            )
+            Spacer(Modifier.size(PlayfitSpacing.xs))
+        }
+        Text(
+            text = if (busy) busyText else text,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 13.sp,
+        )
     }
 }

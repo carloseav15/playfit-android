@@ -39,8 +39,18 @@ data class PlayfitUiState(
     val saving: Boolean = false,
     val error: String? = null,
     val toast: String? = null,
+    val toastActionLabel: String? = null,
     val showingStaleData: Boolean = false,
     val pendingSync: Boolean = false,
+)
+
+private data class PendingDecisionUndo(
+    val gameId: String,
+    val previousState: ProductGameState?,
+    val previousProductState: ProductState,
+    val previousPlayNext: ProductPlayNextModel?,
+    val previousPicks: List<RankedSeedGame>,
+    val previousExcludedIds: Set<String>,
 )
 
 data class PlatformsUiState(
@@ -48,6 +58,24 @@ data class PlatformsUiState(
     val error: String? = null,
     val showingStaleData: Boolean = false,
 )
+
+data class SearchUiState(
+    val query: String = "",
+    val selectedFamily: String? = null,
+    val results: List<SeedGame> = emptyList(),
+    val total: Int = 0,
+    val page: Int = 1,
+    val loading: Boolean = false,
+    val loadingMore: Boolean = false,
+    val error: String? = null,
+) {
+    val hasMore: Boolean get() = results.size < total
+}
+
+internal fun mergeSearchResults(existing: List<SeedGame>, incoming: List<SeedGame>): List<SeedGame> {
+    val seen = existing.mapTo(mutableSetOf()) { it.gameId }
+    return existing + incoming.filterNot { it.gameId in seen }
+}
 
 sealed interface DossierUiState {
     data object Idle : DossierUiState
@@ -103,6 +131,11 @@ class PlayfitViewModel @Inject constructor(
     private val _dossier = MutableStateFlow<DossierUiState>(DossierUiState.Idle)
     val dossier: StateFlow<DossierUiState> = _dossier.asStateFlow()
 
+    private val _search = MutableStateFlow(SearchUiState())
+    val search: StateFlow<SearchUiState> = _search.asStateFlow()
+    private var searchJob: Job? = null
+    private var searchRequestSeq = 0L
+
     private val _onboardingCompleted = MutableStateFlow(false)
     val onboardingCompleted: StateFlow<Boolean> = _onboardingCompleted.asStateFlow()
 
@@ -111,6 +144,8 @@ class PlayfitViewModel @Inject constructor(
 
     private val _excludedIds = MutableStateFlow<Set<String>>(emptySet())
     val excludedIds: StateFlow<Set<String>> = _excludedIds.asStateFlow()
+
+    private var pendingDecisionUndo: PendingDecisionUndo? = null
 
     private val _selectedPlatformIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedPlatformIds: StateFlow<Set<String>> = _selectedPlatformIds.asStateFlow()
@@ -222,7 +257,34 @@ class PlayfitViewModel @Inject constructor(
     }
 
     fun deleteAccount() {
-        authCoordinator.deleteAccount()
+        if (!authState.value.canDeleteAccount) {
+            setToast("Sign in before deleting your cloud profile.")
+            return
+        }
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(saving = true, error = null)
+            safeRepositoryCall { repository.deleteCloudProfile() }.fold(
+                onFailure = { error ->
+                    _ui.value = _ui.value.copy(saving = false, error = error.message)
+                    setToast(error.message)
+                },
+                onSuccess = {
+                    clearPlayfitDataAfterProfileDeletion()
+                    when (val signOut = authCoordinator.signOut()) {
+                        is AuthResult.Error -> {
+                            _ui.value = _ui.value.copy(error = signOut.message)
+                            setToast("Cloud profile deleted, but sign out failed: ${signOut.message}")
+                        }
+                        is AuthResult.Pending -> {
+                            setToast("Cloud profile deleted. ${signOut.message}")
+                        }
+                        is AuthResult.Success -> {
+                            setToast("Cloud profile deleted.")
+                        }
+                    }
+                },
+            )
+        }
     }
 
     suspend fun signInAnonymously(): AuthResult = authCoordinator.signInAnonymously()
@@ -445,12 +507,85 @@ class PlayfitViewModel @Inject constructor(
 
     suspend fun searchGames(query: String): List<SeedGame> {
         return safeRepositoryCall { repository.searchGames(query) }.fold(
-            onSuccess = { it.data },
+            onSuccess = { it.data.games },
             onFailure = { error ->
                 _ui.value = _ui.value.copy(error = error.message)
                 throw IllegalStateException(error.message)
             },
         )
+    }
+
+    fun updateSearchQuery(query: String) {
+        _search.value = _search.value.copy(query = query)
+        triggerSearch(resetPage = true)
+    }
+
+    fun updateSearchFamily(family: String?) {
+        val next = if (_search.value.selectedFamily == family) null else family
+        _search.value = _search.value.copy(selectedFamily = next)
+        triggerSearch(resetPage = true)
+    }
+
+    fun loadMoreSearchResults() {
+        if (_search.value.loadingMore || !_search.value.hasMore) return
+        triggerSearch(resetPage = false)
+    }
+
+    fun retrySearch() {
+        triggerSearch(resetPage = true)
+    }
+
+    fun resetSearch() {
+        searchJob?.cancel()
+        _search.value = SearchUiState()
+    }
+
+    private fun triggerSearch(resetPage: Boolean) {
+        searchJob?.cancel()
+        val state = _search.value
+        val nextPage = if (resetPage) 1 else state.page + 1
+        val mySeq = ++searchRequestSeq
+
+        searchJob = viewModelScope.launch {
+            _search.value = _search.value.copy(
+                page = nextPage,
+                loading = resetPage,
+                loadingMore = !resetPage,
+                error = null,
+            )
+            delay(SEARCH_DEBOUNCE_MS)
+            if (mySeq != searchRequestSeq) return@launch
+
+            val platformIds = state.selectedFamily
+                ?.let { family -> _platforms.value.filter { it.family == family }.map { it.platformId } }
+                .orEmpty()
+
+            val result = safeRepositoryCall {
+                repository.searchGames(
+                    query = state.query,
+                    platformIds = platformIds,
+                    page = nextPage,
+                    pageSize = SEARCH_PAGE_SIZE,
+                )
+            }
+            if (mySeq != searchRequestSeq) return@launch
+
+            result.fold(
+                onSuccess = { success ->
+                    val page = success.data
+                    _search.value = _search.value.copy(
+                        results = if (resetPage) page.games else mergeSearchResults(_search.value.results, page.games),
+                        total = page.total,
+                        loading = false,
+                        loadingMore = false,
+                        error = null,
+                    )
+                },
+                onFailure = { error ->
+                    _search.value = _search.value.copy(loading = false, loadingMore = false, error = error.message)
+                },
+            )
+        }
     }
 
     fun loadTasteModel() {
@@ -584,6 +719,14 @@ class PlayfitViewModel @Inject constructor(
     fun applyDecisionFeedback(gameId: String, feedback: ProductDecisionFeedback) {
         viewModelScope.launch {
             _ui.value = _ui.value.copy(saving = true, error = null)
+            val undo = PendingDecisionUndo(
+                gameId = gameId,
+                previousState = _state.value.user.gameStates[gameId],
+                previousProductState = _state.value,
+                previousPlayNext = _playNext.value,
+                previousPicks = _picks.value,
+                previousExcludedIds = _excludedIds.value,
+            )
             val write = try {
                 repository.applyFeedback(gameId, feedback)
             } catch (error: Exception) {
@@ -620,7 +763,7 @@ class PlayfitViewModel @Inject constructor(
             rebuildProfileFromCurrentSignals()
             loadTasteModel()
             val message = when (feedback) {
-                ProductDecisionFeedback.NotForMe -> "Noted. We'll find you something better."
+                ProductDecisionFeedback.NotForMe -> "Noted. Playfit will find a better fit."
                 ProductDecisionFeedback.PlayedLoved -> "Already played and loved. Playfit will learn from it."
                 ProductDecisionFeedback.PlayedLiked -> "Already played and liked."
                 ProductDecisionFeedback.PlayedMixed -> "Marked as mixed. Playfit will tune around it."
@@ -631,7 +774,42 @@ class PlayfitViewModel @Inject constructor(
                 ProductDecisionFeedback.Liked -> "Marked as liked."
                 ProductDecisionFeedback.Mixed -> "Marked as mixed."
             }
-            setToast(message)
+            pendingDecisionUndo = undo
+            setToast(message, actionLabel = "Undo")
+        }
+    }
+
+    fun undoLastDecision() {
+        val undo = pendingDecisionUndo ?: return
+        pendingDecisionUndo = null
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(saving = true, error = null)
+            val write = if (undo.previousState == null) {
+                safeRepositoryCall { repository.deleteGameState(undo.gameId) }
+            } else {
+                safeRepositoryCall { repository.saveGameState(undo.gameId, undo.previousState) }
+            }
+            write.fold(
+                onFailure = { error ->
+                    _ui.value = _ui.value.copy(saving = false, error = error.message)
+                    setToast(error.message)
+                },
+                onSuccess = { result ->
+                    _playNext.value = undo.previousPlayNext
+                    _picks.value = undo.previousPicks
+                    _excludedIds.value = undo.previousExcludedIds
+                    _ui.value = _ui.value.copy(
+                        saving = false,
+                        pendingSync = _ui.value.pendingSync || result.pendingSync,
+                    )
+                    rebuildProfileFromCurrentSignals()
+                    // Rebuild may complete an earlier feedback request; restore the snapshot
+                    // last so an Undo always wins over that stale state update.
+                    _state.value = undo.previousProductState
+                    loadTasteModel()
+                    setToast("Undone.")
+                },
+            )
         }
     }
 
@@ -670,12 +848,24 @@ class PlayfitViewModel @Inject constructor(
 
     suspend fun getDeviceId(): String = authManager.deviceId
 
-    private fun setToast(message: String) {
-        _ui.value = _ui.value.copy(toast = message)
+    private fun setToast(message: String, actionLabel: String? = null) {
+        _ui.value = _ui.value.copy(toast = message, toastActionLabel = actionLabel)
     }
 
     fun clearToast() {
-        _ui.value = _ui.value.copy(toast = null)
+        _ui.value = _ui.value.copy(toast = null, toastActionLabel = null)
+    }
+
+    private fun clearPlayfitDataAfterProfileDeletion() {
+        pendingDecisionUndo = null
+        _state.value = ProductState()
+        _playNext.value = null
+        _picks.value = emptyList()
+        _tasteModel.value = null
+        _dossier.value = DossierUiState.Idle
+        _excludedIds.value = emptySet()
+        _onboardingCompleted.value = false
+        _ui.value = _ui.value.copy(saving = false, pendingSync = false, showingStaleData = false)
     }
 
     private fun updateGameState(next: ProductGameState) {
@@ -793,5 +983,7 @@ class PlayfitViewModel @Inject constructor(
     private companion object {
         const val MAX_ONBOARDING_RECS_ATTEMPTS = 3
         const val ONBOARDING_RECS_RETRY_DELAY_MS = 1500L
+        const val SEARCH_PAGE_SIZE = 24
+        const val SEARCH_DEBOUNCE_MS = 250L
     }
 }

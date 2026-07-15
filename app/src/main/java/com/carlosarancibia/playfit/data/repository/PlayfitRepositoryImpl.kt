@@ -5,6 +5,7 @@ import com.carlosarancibia.playfit.data.DataSource
 import com.carlosarancibia.playfit.data.PlayfitRepository
 import com.carlosarancibia.playfit.data.RepositoryError
 import com.carlosarancibia.playfit.data.RepositoryResult
+import com.carlosarancibia.playfit.data.SearchGamesPage
 import com.carlosarancibia.playfit.data.auth.AuthManager
 import com.carlosarancibia.playfit.data.local.PlayfitDatabase
 import com.carlosarancibia.playfit.data.local.PreferencesDataStore
@@ -17,12 +18,12 @@ import com.carlosarancibia.playfit.data.remote.GameStateRequest
 import com.carlosarancibia.playfit.data.remote.BatchGamesRequest
 import com.carlosarancibia.playfit.data.remote.BatchGamesResponse
 import com.carlosarancibia.playfit.data.remote.SimilarGamesRequest
+import com.carlosarancibia.playfit.data.remote.SimilarGamesResponse
 import com.carlosarancibia.playfit.data.remote.DeleteGameStateOperation
 import com.carlosarancibia.playfit.data.remote.OnboardingDraftDto
 import com.carlosarancibia.playfit.data.remote.PersistedOnboardingDto
 import com.carlosarancibia.playfit.data.remote.PlatformSelectionDto
 import com.carlosarancibia.playfit.data.remote.PlatformsResponse
-import com.carlosarancibia.playfit.data.remote.PicksResponse
 import com.carlosarancibia.playfit.data.remote.PlayfitApiService
 import com.carlosarancibia.playfit.data.remote.ProfileBuildRequest
 import com.carlosarancibia.playfit.data.remote.ProfileBuildResponse
@@ -101,16 +102,16 @@ class PlayfitRepositoryImpl @Inject constructor(
 
     override suspend fun getPicks(): RepositoryResult<List<RankedSeedGame>> {
         return try {
-            val response = apiService.getPicks()
-            cache(CACHE_PICKS, response)
+            val picks = apiService.getPicks()
+            cache(CACHE_PICKS, picks)
             database.picksDao().deleteAll()
-            database.picksDao().insertAll(response.picks.map { it.toEntity() })
+            database.picksDao().insertAll(picks.map { it.toEntity() })
             RepositoryResult.Success(
-                data = overlayLocalPicks(response.picks.map { it.toDomain() }, pendingOnly = true),
+                data = overlayLocalPicks(picks.map { it.toDomain() }, pendingOnly = true),
                 source = DataSource.Network,
             )
         } catch (error: Exception) {
-            val cached = readCache<PicksResponse>(CACHE_PICKS)?.picks?.map { it.toDomain() }
+            val cached = readCache<List<RankedSeedGameDto>>(CACHE_PICKS)?.map { it.toDomain() }
                 ?: database.picksDao().getAllPicks().first().map { it.toDomain() }
             val merged = overlayLocalPicks(cached, pendingOnly = false)
             if (merged.isNotEmpty() || cached.isNotEmpty()) {
@@ -317,6 +318,26 @@ class PlayfitRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteCloudProfile(): RepositoryResult<Unit> {
+        // Profile deletion is irreversible, so unlike a taste reset it must not become an
+        // offline operation that could outlive the authenticated session.
+        syncManager.cancelSync()
+        return try {
+            apiService.deleteProfile()
+            database.withTransaction {
+                database.gameStateDao().deleteAll()
+                database.picksDao().deleteAll()
+                database.cacheEntryDao().deleteAll()
+                database.pendingOperationDao().deleteAll()
+            }
+            preferencesDataStore.resetTaste()
+            RepositoryResult.Success(Unit, DataSource.Network)
+        } catch (error: Exception) {
+            syncManager.enqueueSync()
+            RepositoryResult.Failure(error.toRepositoryError())
+        }
+    }
+
     override suspend fun saveGameState(
         gameId: String,
         state: ProductGameState,
@@ -359,20 +380,41 @@ class PlayfitRepositoryImpl @Inject constructor(
     override suspend fun getSimilarGames(gameId: String): RepositoryResult<List<SimilarGame>> {
         return try {
             val response = apiService.getSimilarRecommendations(SimilarGamesRequest(gameId))
+            cache(similarGamesCacheKey(gameId), response)
             RepositoryResult.Success(
                 response.similar.map { SimilarGame(it.gameId, it.title, it.score) },
                 DataSource.Network,
             )
         } catch (error: Exception) {
-            RepositoryResult.Failure(error.toRepositoryError())
+            val cached = readCache<SimilarGamesResponse>(similarGamesCacheKey(gameId))
+            if (cached != null) {
+                RepositoryResult.Success(
+                    cached.similar.map { SimilarGame(it.gameId, it.title, it.score) },
+                    DataSource.Cache,
+                    isStale = true,
+                )
+            } else {
+                RepositoryResult.Failure(error.toRepositoryError())
+            }
         }
     }
 
-    override suspend fun searchGames(query: String, limit: Int): RepositoryResult<List<SeedGame>> {
+    override suspend fun searchGames(
+        query: String,
+        limit: Int,
+        platformIds: List<String>,
+        page: Int,
+        pageSize: Int,
+    ): RepositoryResult<SearchGamesPage> {
         return try {
-            val response = apiService.searchGames(query = query)
+            val response = apiService.searchGames(
+                query = query,
+                platform = platformIds.takeIf { it.isNotEmpty() }?.joinToString(","),
+                page = page,
+                pageSize = pageSize,
+            )
             RepositoryResult.Success(
-                response.games.take(limit).map { it.toDomain() },
+                SearchGamesPage(response.games.take(limit).map { it.toDomain() }, response.total),
                 DataSource.Network,
             )
         } catch (error: Exception) {
@@ -503,7 +545,7 @@ class PlayfitRepositoryImpl @Inject constructor(
         return buildList {
             today?.primary?.toDomain()?.let(::add)
             addAll(today?.alternatives.orEmpty().map { it.toDomain() })
-            addAll(readCache<PicksResponse>(CACHE_PICKS)?.picks.orEmpty().map { it.toDomain() })
+            addAll(readCache<List<RankedSeedGameDto>>(CACHE_PICKS).orEmpty().map { it.toDomain() })
         }.distinctBy { it.game.gameId }
     }
 
@@ -539,6 +581,8 @@ class PlayfitRepositoryImpl @Inject constructor(
         return runCatching { json.decodeFromString<T>(payload) }.getOrNull()
     }
 
+    private fun similarGamesCacheKey(gameId: String) = "$CACHE_SIMILAR_GAMES_PREFIX$gameId"
+
     companion object {
         const val OPERATION_SAVE_PROFILE = "save_profile"
         const val OPERATION_DELETE_GAME_STATE = "delete_game_state"
@@ -551,5 +595,6 @@ class PlayfitRepositoryImpl @Inject constructor(
         private const val CACHE_PROFILE_BUILD = "profile_build"
         const val CACHE_PROFILE_STATE = "profile_state"
         private const val CACHE_TASTE_GAMES = "taste_games"
+        private const val CACHE_SIMILAR_GAMES_PREFIX = "similar_games:"
     }
 }

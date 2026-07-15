@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -69,6 +70,7 @@ import com.carlosarancibia.playfit.ui.screens.OnboardingScreen
 import com.carlosarancibia.playfit.ui.screens.PicksScreen
 import com.carlosarancibia.playfit.ui.screens.PlayNextScreen
 import com.carlosarancibia.playfit.ui.screens.ResetPasswordScreen
+import com.carlosarancibia.playfit.ui.screens.SearchScreen
 import com.carlosarancibia.playfit.ui.screens.SettingsScreen
 import com.carlosarancibia.playfit.ui.screens.SplashScreen
 import com.carlosarancibia.playfit.ui.screens.GameNode
@@ -96,6 +98,7 @@ private val bottomNavItems = listOf(
     BottomNavItem("play-next", "Play Next", Icons.Default.PlayArrow),
     BottomNavItem("picks", "Picks", Icons.Default.FavoriteBorder),
     BottomNavItem("taste", "Taste", Icons.AutoMirrored.Filled.List),
+    BottomNavItem("search", "Search", Icons.Default.Search),
     BottomNavItem("settings", "Settings", Icons.Default.Settings),
 )
 
@@ -127,7 +130,20 @@ fun PlayfitApp(
 
     LaunchedEffect(uiState.toast) {
         uiState.toast?.let { message ->
-            snackbarHostState.showSnackbar(message)
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = uiState.toastActionLabel,
+                duration = if (uiState.toastActionLabel == "Undo") {
+                    androidx.compose.material3.SnackbarDuration.Long
+                } else {
+                    androidx.compose.material3.SnackbarDuration.Short
+                },
+            )
+            if (result == androidx.compose.material3.SnackbarResult.ActionPerformed &&
+                uiState.toastActionLabel == "Undo"
+            ) {
+                viewModel.undoLastDecision()
+            }
             viewModel.clearToast()
         }
     }
@@ -389,6 +405,25 @@ fun PlayfitApp(
                 )
             }
             composable(
+                "search",
+                enterTransition = { slideInHorizontally { it } },
+                exitTransition = { slideOutHorizontally { -it } },
+                popEnterTransition = { slideInHorizontally { -it } },
+                popExitTransition = { slideOutHorizontally { it } },
+            ) {
+                val searchState by viewModel.search.collectAsState()
+                LaunchedEffect(Unit) { viewModel.resetSearch() }
+                SearchScreen(
+                    searchState = searchState,
+                    platforms = platforms,
+                    onQueryChange = { viewModel.updateSearchQuery(it) },
+                    onFamilyChange = { viewModel.updateSearchFamily(it) },
+                    onLoadMore = { viewModel.loadMoreSearchResults() },
+                    onRetry = { viewModel.retrySearch() },
+                    onOpenGame = { gameId -> navController.navigate("game/$gameId") },
+                )
+            }
+            composable(
                 "settings",
                 enterTransition = { slideInHorizontally { it } },
                 exitTransition = { slideOutHorizontally { -it } },
@@ -480,4 +515,3 @@ fun PlayfitApp(
     }
 }
 }
-

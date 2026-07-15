@@ -297,31 +297,32 @@ private fun ActivityRow(
                                 fontWeight = FontWeight.SemiBold,
                             )
                         }
-                    }
-                    TextButton(
-                        onClick = {
-                            showManageDialog = false
-                            showChangeSheet = true
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(
-                            text = "Change Signal",
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-                    TextButton(
-                        onClick = {
-                            showManageDialog = false
-                            onDeleteSignal()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(
-                            text = "Delete Signal",
-                            color = PlayfitExtendedTheme.colors.playfitNegative,
-                            fontWeight = FontWeight.SemiBold,
-                        )
+                    } else {
+                        TextButton(
+                            onClick = {
+                                showManageDialog = false
+                                showChangeSheet = true
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                text = "Change Signal",
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                showManageDialog = false
+                                onDeleteSignal()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                text = "Delete Signal",
+                                color = PlayfitExtendedTheme.colors.playfitNegative,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
                     }
                 }
             },
@@ -356,7 +357,7 @@ private fun ChangeSignalSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
     ) {
         Column(

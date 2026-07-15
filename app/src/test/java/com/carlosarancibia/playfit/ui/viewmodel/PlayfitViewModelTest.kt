@@ -5,6 +5,7 @@ import com.carlosarancibia.playfit.data.DataSource
 import com.carlosarancibia.playfit.data.PlayfitRepository
 import com.carlosarancibia.playfit.data.RepositoryError
 import com.carlosarancibia.playfit.data.RepositoryResult
+import com.carlosarancibia.playfit.data.SearchGamesPage
 import com.carlosarancibia.playfit.data.auth.AuthManager
 import com.carlosarancibia.playfit.data.auth.AuthResult
 import com.carlosarancibia.playfit.data.auth.AuthSessionInfo
@@ -71,6 +72,7 @@ class PlayfitViewModelTest {
         every { authManager.pendingPasswordRecovery } returns MutableStateFlow(null)
         coEvery { authManager.restoreSession() } returns restoredSession
         coEvery { authManager.signInAnonymously() } returns AuthResult.Success(restoredSession)
+        coEvery { authManager.signOut() } returns AuthResult.Success()
         coEvery { repository.getState() } returns success(ProductState())
         coEvery { repository.getTodayRecommendations() } returns success(ProductPlayNextModel(
             primary = recommendation("game1"),
@@ -92,6 +94,7 @@ class PlayfitViewModelTest {
         coEvery { repository.rebuildTasteProfile(any(), any()) } returns success(ProductProfile())
         coEvery { repository.deleteGameState(any()) } returns success(Unit, pendingSync = true)
         coEvery { repository.resetTaste() } returns success(Unit)
+        coEvery { repository.deleteCloudProfile() } returns success(Unit)
 
         viewModel = PlayfitViewModel(repository, authManager, preferencesDataStore)
     }
@@ -107,18 +110,20 @@ class PlayfitViewModelTest {
         assertEquals("user-1", auth.userId)
         assertTrue(auth.canLinkGoogle)
         assertTrue(auth.canSignOut)
-        assertFalse(auth.canDeleteAccount)
+        assertTrue(auth.canDeleteAccount)
     }
 
     @Test
-    fun `deleteAccount is not called when Android cloud deletion is unavailable`() = runTest(testDispatcher) {
+    fun `delete account deletes the cloud profile before signing out`() = runTest(testDispatcher) {
         advanceUntilIdle()
 
         viewModel.deleteAccount()
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { authManager.deleteAccount() }
-        assertEquals("Cloud account deletion is not available in the Android app yet.", viewModel.ui.value.toast)
+        coVerify { repository.deleteCloudProfile() }
+        coVerify { authManager.signOut() }
+        assertEquals("Cloud profile deleted.", viewModel.ui.value.toast)
+        assertTrue(viewModel.state.value.user.gameStates.isEmpty())
     }
 
     @Test
@@ -294,6 +299,56 @@ class PlayfitViewModelTest {
     }
 
     @Test
+    fun `not for me uses the shared cross-platform toast copy`() = runTest(testDispatcher) {
+        advanceUntilIdle()
+
+        viewModel.applyDecisionFeedback("game1", ProductDecisionFeedback.NotForMe)
+        advanceUntilIdle()
+
+        assertEquals("Noted. Playfit will find a better fit.", viewModel.ui.value.toast)
+        assertEquals("Undo", viewModel.ui.value.toastActionLabel)
+    }
+
+    @Test
+    fun `undo not for me removes a newly created game state and restores recommendations`() = runTest(testDispatcher) {
+        advanceUntilIdle()
+        val before = viewModel.playNext.value
+
+        viewModel.applyDecisionFeedback("game1", ProductDecisionFeedback.NotForMe)
+        advanceUntilIdle()
+        viewModel.undoLastDecision()
+        advanceUntilIdle()
+
+        coVerify { repository.deleteGameState("game1") }
+        assertTrue(viewModel.state.value.user.gameStates.isEmpty())
+        assertEquals(before, viewModel.playNext.value)
+        assertEquals("Undone.", viewModel.ui.value.toast)
+    }
+
+    @Test
+    fun `undo restores the previous decision state`() = runTest(testDispatcher) {
+        val previous = ProductGameState(
+            gameId = "game1",
+            title = "Game 1",
+            status = ProductPlayStatus.OnHold,
+            inPlayfitPicks = true,
+        )
+        val initialState = ProductState().let { state ->
+            state.copy(user = state.user.copy(gameStates = mapOf("game1" to previous)))
+        }
+        coEvery { repository.getState() } returns success(initialState)
+        val model = newViewModel()
+        advanceUntilIdle()
+
+        model.applyDecisionFeedback("game1", ProductDecisionFeedback.NotForMe)
+        advanceUntilIdle()
+        model.undoLastDecision()
+        advanceUntilIdle()
+
+        coVerify { repository.saveGameState("game1", previous) }
+    }
+
+    @Test
     fun `show another removes recommendation without writing negative feedback`() = runTest(testDispatcher) {
         advanceUntilIdle()
 
@@ -325,7 +380,7 @@ class PlayfitViewModelTest {
             SeedGame(gameId = "g1", title = "Game 1"),
             SeedGame(gameId = "g2", title = "Game 2"),
         )
-        coEvery { repository.searchGames("game", 20) } returns success(expected)
+        coEvery { repository.searchGames("game", 20) } returns success(SearchGamesPage(expected, expected.size))
 
         val result = viewModel.searchGames("game")
         assertEquals(expected, result)
@@ -344,6 +399,67 @@ class PlayfitViewModelTest {
             assertEquals("API error", error.message)
         }
         assertEquals("API error", viewModel.ui.value.error)
+    }
+
+    @Test
+    fun `catalog search debounces rapid typing into a single request for the latest query`() = runTest(testDispatcher) {
+        coEvery { repository.searchGames(query = any(), platformIds = any(), page = any(), pageSize = any()) } returns
+            success(SearchGamesPage(listOf(SeedGame(gameId = "mario", title = "Mario")), 1))
+
+        viewModel.updateSearchQuery("m")
+        viewModel.updateSearchQuery("ma")
+        viewModel.updateSearchQuery("mar")
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.searchGames(query = "m", platformIds = any(), page = any(), pageSize = any()) }
+        coVerify(exactly = 0) { repository.searchGames(query = "ma", platformIds = any(), page = any(), pageSize = any()) }
+        coVerify(exactly = 1) { repository.searchGames(query = "mar", platformIds = any(), page = any(), pageSize = any()) }
+        assertEquals("mar", viewModel.search.value.query)
+        assertEquals(listOf("mario"), viewModel.search.value.results.map { it.gameId })
+    }
+
+    @Test
+    fun `catalog search family filter toggles off when reselected`() = runTest(testDispatcher) {
+        coEvery { repository.searchGames(query = any(), platformIds = any(), page = any(), pageSize = any()) } returns
+            success(SearchGamesPage(emptyList(), 0))
+
+        val nintendoPlatformIds = com.carlosarancibia.playfit.model.fallbackPlatforms
+            .filter { it.family == "nintendo" }
+            .map { it.platformId }
+
+        viewModel.updateSearchFamily("nintendo")
+        advanceUntilIdle()
+        assertEquals("nintendo", viewModel.search.value.selectedFamily)
+        coVerify {
+            repository.searchGames(query = "", platformIds = nintendoPlatformIds, page = 1, pageSize = 24)
+        }
+
+        viewModel.updateSearchFamily("nintendo")
+        advanceUntilIdle()
+        assertEquals(null, viewModel.search.value.selectedFamily)
+        coVerify { repository.searchGames(query = "", platformIds = emptyList(), page = 1, pageSize = 24) }
+    }
+
+    @Test
+    fun `catalog search loadMore appends results and stops when there is no more`() = runTest(testDispatcher) {
+        coEvery { repository.searchGames(query = "zelda", platformIds = any(), page = 1, pageSize = 24) } returns
+            success(SearchGamesPage(listOf(SeedGame(gameId = "z1", title = "Zelda 1")), 2))
+        coEvery { repository.searchGames(query = "zelda", platformIds = any(), page = 2, pageSize = 24) } returns
+            success(SearchGamesPage(listOf(SeedGame(gameId = "z2", title = "Zelda 2")), 2))
+
+        viewModel.updateSearchQuery("zelda")
+        advanceUntilIdle()
+        assertTrue(viewModel.search.value.hasMore)
+
+        viewModel.loadMoreSearchResults()
+        advanceUntilIdle()
+
+        assertEquals(listOf("z1", "z2"), viewModel.search.value.results.map { it.gameId })
+        assertFalse(viewModel.search.value.hasMore)
+
+        viewModel.loadMoreSearchResults()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { repository.searchGames(query = "zelda", platformIds = any(), page = 3, pageSize = 24) }
     }
 
     @Test

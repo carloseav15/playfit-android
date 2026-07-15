@@ -3,6 +3,7 @@ package com.carlosarancibia.playfit.data.repository
 import com.carlosarancibia.playfit.data.DataSource
 import com.carlosarancibia.playfit.data.RepositoryError
 import com.carlosarancibia.playfit.data.RepositoryResult
+import com.carlosarancibia.playfit.data.SearchGamesPage
 import com.carlosarancibia.playfit.data.auth.AuthManager
 import com.carlosarancibia.playfit.data.local.PlayfitDatabase
 import com.carlosarancibia.playfit.data.local.PreferencesDataStore
@@ -12,6 +13,7 @@ import com.carlosarancibia.playfit.data.local.dao.PendingOperationDao
 import com.carlosarancibia.playfit.data.local.dao.PicksDao
 import com.carlosarancibia.playfit.data.local.entity.CacheEntryEntity
 import com.carlosarancibia.playfit.data.remote.PlayfitApiService
+import com.carlosarancibia.playfit.data.remote.GamesResponse
 import com.carlosarancibia.playfit.data.remote.PlatformDto
 import com.carlosarancibia.playfit.data.remote.PlatformsResponse
 import com.carlosarancibia.playfit.data.remote.RankedSeedGameDto
@@ -19,6 +21,8 @@ import com.carlosarancibia.playfit.data.remote.ProfileBuildResponse
 import com.carlosarancibia.playfit.data.remote.ProfileDto
 import com.carlosarancibia.playfit.data.remote.ProfileSaveRequest
 import com.carlosarancibia.playfit.data.remote.SeedGameDto
+import com.carlosarancibia.playfit.data.remote.SimilarGameDto
+import com.carlosarancibia.playfit.data.remote.SimilarGamesResponse
 import com.carlosarancibia.playfit.data.remote.TodayResponse
 import com.carlosarancibia.playfit.data.sync.SyncManager
 import com.carlosarancibia.playfit.model.ProductOnboardingDraft
@@ -120,6 +124,53 @@ class PlayfitRepositoryImplTest {
     }
 
     @Test
+    fun `similar games response is cached by game id`() = runTest {
+        coEvery { api.getSimilarRecommendations(any()) } returns SimilarGamesResponse(
+            similar = listOf(SimilarGameDto("similar-1", "Similar One", 0.8)),
+        )
+        coEvery { cacheDao.put(any()) } just runs
+
+        val result = repository.getSimilarGames("game-1")
+
+        assertTrue(result is RepositoryResult.Success)
+        result as RepositoryResult.Success
+        assertEquals(DataSource.Network, result.source)
+        assertEquals("similar-1", result.data.single().gameId)
+        coVerify { api.getSimilarRecommendations(match { it.gameId == "game-1" }) }
+        coVerify { cacheDao.put(match { it.cacheKey == "similar_games:game-1" }) }
+    }
+
+    @Test
+    fun `similar games uses stale cache for the requested game when offline`() = runTest {
+        coEvery { api.getSimilarRecommendations(any()) } throws IOException("offline")
+        coEvery { cacheDao.get("similar_games:game-1") } returns CacheEntryEntity(
+            cacheKey = "similar_games:game-1",
+            payload = Json.encodeToString(
+                SimilarGamesResponse(listOf(SimilarGameDto("similar-1", "Similar One", 0.8))),
+            ),
+        )
+
+        val result = repository.getSimilarGames("game-1")
+
+        assertTrue(result is RepositoryResult.Success)
+        result as RepositoryResult.Success
+        assertEquals(DataSource.Cache, result.source)
+        assertTrue(result.isStale)
+        assertEquals("similar-1", result.data.single().gameId)
+    }
+
+    @Test
+    fun `similar games fails offline without a cache for that game`() = runTest {
+        coEvery { api.getSimilarRecommendations(any()) } throws IOException("offline")
+        coEvery { cacheDao.get("similar_games:game-2") } returns null
+
+        val result = repository.getSimilarGames("game-2")
+
+        assertTrue(result is RepositoryResult.Failure)
+        assertTrue((result as RepositoryResult.Failure).error is RepositoryError.Network)
+    }
+
+    @Test
     fun `platforms use network response and are cached`() = runTest {
         coEvery { api.getPlatforms() } returns PlatformsResponse(
             platforms = listOf(
@@ -170,6 +221,43 @@ class PlayfitRepositoryImplTest {
         assertEquals(DataSource.Cache, result.source)
         assertTrue(result.isStale)
         assertEquals("ps5", result.data.single().platformId)
+    }
+
+    @Test
+    fun `searchGames forwards platform ids as csv and paging params`() = runTest {
+        coEvery {
+            api.searchGames(query = "mario", platform = match { it == "switch_2,switch_1" }, page = 2, pageSize = 24)
+        } returns GamesResponse(
+            games = listOf(SeedGameDto(gameId = "g1", title = "Mario 1")),
+            total = 50,
+            page = 2,
+            pageSize = 24,
+        )
+
+        val result = repository.searchGames(
+            query = "mario",
+            platformIds = listOf("switch_2", "switch_1"),
+            page = 2,
+            pageSize = 24,
+        )
+
+        assertTrue(result is RepositoryResult.Success)
+        result as RepositoryResult.Success
+        assertEquals(50, result.data.total)
+        assertEquals("g1", result.data.games.single().gameId)
+    }
+
+    @Test
+    fun `searchGames omits platform query param when no platforms are selected`() = runTest {
+        coEvery {
+            api.searchGames(query = "mario", platform = null, page = 1, pageSize = 20)
+        } returns GamesResponse(games = emptyList(), total = 0, page = 1, pageSize = 20)
+
+        val result = repository.searchGames(query = "mario")
+
+        assertTrue(result is RepositoryResult.Success)
+        result as RepositoryResult.Success
+        assertEquals(0, result.data.total)
     }
 
     @Test

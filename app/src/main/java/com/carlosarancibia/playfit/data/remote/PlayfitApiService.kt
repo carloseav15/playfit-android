@@ -15,10 +15,10 @@ interface PlayfitApiService {
     @POST("api/recommendations/today")
     suspend fun getTodayRecommendations(): TodayResponse
 
-    @POST("api/recommendations/picks")
-    suspend fun getPicks(): PicksResponse
+    @GET("api/recommendations/picks")
+    suspend fun getPicks(): List<RankedSeedGameDto>
 
-    @POST("api/recommendations/game/{gameId}")
+    @GET("api/recommendations/game/{gameId}")
     suspend fun getGameRecommendation(@Path("gameId") gameId: String): GameResponse
 
     @POST("api/recommendations/similar")
@@ -49,7 +49,12 @@ interface PlayfitApiService {
     suspend fun deleteProfile()
 
     @GET("api/games")
-    suspend fun searchGames(@Query("q") query: String? = null): GamesResponse
+    suspend fun searchGames(
+        @Query("q") query: String? = null,
+        @Query("platform") platform: String? = null,
+        @Query("page") page: Int? = null,
+        @Query("pageSize") pageSize: Int? = null,
+    ): GamesResponse
 
     @POST("api/games/batch")
     suspend fun batchGames(@Body request: BatchGamesRequest): BatchGamesResponse
@@ -64,11 +69,6 @@ data class TodayResponse(
     val savedPickIds: List<String> = emptyList(),
     @SerialName("stateVersion")
     val stateVersion: String? = null,
-)
-
-@Serializable
-data class PicksResponse(
-    val picks: List<RankedSeedGameDto> = emptyList(),
 )
 
 @Serializable

@@ -33,10 +33,20 @@ interface PlayfitRepository {
     ): RepositoryResult<ProductProfile>
     suspend fun deleteGameState(gameId: String): RepositoryResult<Unit>
     suspend fun resetTaste(): RepositoryResult<Unit>
+    /** Deletes the authenticated cloud profile and clears the local Playfit store only on success. */
+    suspend fun deleteCloudProfile(): RepositoryResult<Unit>
     suspend fun saveGameState(gameId: String, state: ProductGameState): RepositoryResult<Unit>
     suspend fun applyFeedback(gameId: String, feedback: ProductDecisionFeedback): RepositoryResult<Unit>
     suspend fun togglePick(gameId: String, picked: Boolean): RepositoryResult<Unit>
     suspend fun refreshRecommendations(): RepositoryResult<ProductPlayNextModel>
     suspend fun getSimilarGames(gameId: String): RepositoryResult<List<SimilarGame>>
-    suspend fun searchGames(query: String, limit: Int = 20): RepositoryResult<List<SeedGame>>
+    suspend fun searchGames(
+        query: String,
+        limit: Int = 20,
+        platformIds: List<String> = emptyList(),
+        page: Int = 1,
+        pageSize: Int = 20,
+    ): RepositoryResult<SearchGamesPage>
 }
+
+data class SearchGamesPage(val games: List<SeedGame>, val total: Int)
