@@ -11,6 +11,8 @@ import com.carlosarancibia.playfit.model.ProductTasteModel
 import com.carlosarancibia.playfit.model.Platform
 import com.carlosarancibia.playfit.model.RankedSeedGame
 import com.carlosarancibia.playfit.model.fallbackPlatforms
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 internal data class InitialDataSnapshot(
     val state: ProductState?,
@@ -27,16 +29,20 @@ internal class InitialDataCoordinator(
     private val repository: PlayfitRepository,
     private val preferencesDataStore: PreferencesDataStore,
 ) {
-    suspend fun load(): InitialDataSnapshot {
+    suspend fun load(): InitialDataSnapshot = coroutineScope {
         val failures = mutableListOf<String>()
-        val platformsResult = loadPlatforms()
-        var stale = platformsResult.second.showingStaleData
+        val platformsDeferred = async { loadPlatforms() }
+        val stateDeferred = async { safeRepositoryCall { repository.getState() } }
+        val playNextDeferred = async { safeRepositoryCall { repository.getTodayRecommendations() } }
+        val picksDeferred = async { safeRepositoryCall { repository.getPicks() } }
+
+        var stale = false
         var state: ProductState? = null
         var playNext: ProductPlayNextModel? = null
         var picks: List<RankedSeedGame>? = null
         var tasteModel: ProductTasteModel? = null
 
-        safeRepositoryCall { repository.getState() }.fold(
+        stateDeferred.await().fold(
             onSuccess = { result ->
                 state = result.data
                 val isCompleted = result.data.user.onboardingCompletedAt != null
@@ -49,20 +55,8 @@ internal class InitialDataCoordinator(
             },
             onFailure = { error -> failures += error.message },
         )
-        safeRepositoryCall { repository.getTodayRecommendations() }.fold(
-            onSuccess = { result ->
-                playNext = result.data
-                stale = stale || result.isStale
-            },
-            onFailure = { error -> failures += error.message },
-        )
-        safeRepositoryCall { repository.getPicks() }.fold(
-            onSuccess = { result ->
-                picks = result.data
-                stale = stale || result.isStale
-            },
-            onFailure = { error -> failures += error.message },
-        )
+        // Taste derives from Room/profile cache, which getState refreshes. Keep it after State
+        // while the independent network reads above run in parallel.
         safeRepositoryCall { repository.getTasteModel() }.fold(
             onSuccess = { result ->
                 tasteModel = result.data
@@ -70,8 +64,24 @@ internal class InitialDataCoordinator(
             },
             onFailure = { error -> failures += error.message },
         )
+        playNextDeferred.await().fold(
+            onSuccess = { result ->
+                playNext = result.data
+                stale = stale || result.isStale
+            },
+            onFailure = { error -> failures += error.message },
+        )
+        picksDeferred.await().fold(
+            onSuccess = { result ->
+                picks = result.data
+                stale = stale || result.isStale
+            },
+            onFailure = { error -> failures += error.message },
+        )
+        val platformsResult = platformsDeferred.await()
+        stale = stale || platformsResult.second.showingStaleData
 
-        return InitialDataSnapshot(
+        InitialDataSnapshot(
             state = state,
             playNext = playNext,
             picks = picks,

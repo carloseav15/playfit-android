@@ -74,20 +74,6 @@ internal class AuthCoordinator(
         }
     }
 
-    fun deleteAccount() {
-        if (!_state.value.canDeleteAccount) {
-            setToast("Cloud account deletion is not available in the Android app yet.")
-            return
-        }
-        scope.launch {
-            when (val result = authManager.deleteAccount()) {
-                is AuthResult.Error -> setToast(result.message)
-                is AuthResult.Pending -> setToast(result.message)
-                is AuthResult.Success -> setToast("Account deleted.")
-            }
-        }
-    }
-
     suspend fun signInAnonymously(): AuthResult = authManager.signInAnonymously()
     suspend fun signInWithGoogle(): AuthResult = authManager.signInWithGoogle()
     suspend fun signInWithEmail(email: String, password: String): AuthResult =
@@ -108,6 +94,6 @@ internal class AuthCoordinator(
         email = this?.email,
         canLinkGoogle = this?.isAnonymous == true,
         canSignOut = this != null,
-        canDeleteAccount = false,
+        canDeleteAccount = this != null,
     )
 }

@@ -32,7 +32,10 @@ class SyncManager @Inject constructor(
         WorkManager.getInstance(context)
             .enqueueUniqueWork(
                 SYNC_WORK_NAME,
-                ExistingWorkPolicy.KEEP,
+                // A failed or stranded unique job must not prevent the next user action
+                // from retrying all pending Room rows. SyncWorker is idempotent and sends
+                // the full pending set, so replacing an older run is safe.
+                ExistingWorkPolicy.REPLACE,
                 request,
             )
     }

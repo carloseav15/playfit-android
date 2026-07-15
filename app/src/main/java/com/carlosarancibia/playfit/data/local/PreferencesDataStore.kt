@@ -8,6 +8,9 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -41,14 +44,11 @@ class PreferencesDataStore @Inject constructor(
     }
 
     val selectedPlatformIds: Flow<Set<String>> = dataStore.data.map { prefs ->
-        prefs[keySelectedPlatforms]
-            ?.split(",")
-            ?.filter { it.isNotBlank() }
-            ?.toSet() ?: emptySet()
+        decodeSelectedPlatformIds(prefs[keySelectedPlatforms])
     }
 
     suspend fun setSelectedPlatformIds(ids: Set<String>) {
-        dataStore.edit { it[keySelectedPlatforms] = ids.joinToString(",") }
+        dataStore.edit { it[keySelectedPlatforms] = encodeSelectedPlatformIds(ids) }
     }
 
     suspend fun resetTaste() {
@@ -57,5 +57,24 @@ class PreferencesDataStore @Inject constructor(
             prefs[keySelectedPlatforms] = ""
             prefs[keyLastSyncAt] = 0L
         }
+    }
+}
+
+internal fun encodeSelectedPlatformIds(ids: Set<String>): String =
+    Json.encodeToString(ids.sorted())
+
+internal fun decodeSelectedPlatformIds(rawValue: String?): Set<String> {
+    val raw = rawValue?.trim().orEmpty()
+    if (raw.isEmpty()) return emptySet()
+
+    return if (raw.startsWith("[")) {
+        runCatching { Json.decodeFromString<List<String>>(raw) }
+            .getOrDefault(emptyList())
+            .filter { it.isNotBlank() }
+            .toSet()
+    } else {
+        raw.split(",")
+            .filter { it.isNotBlank() }
+            .toSet()
     }
 }

@@ -22,7 +22,6 @@ import com.carlosarancibia.playfit.data.remote.OnboardingDraftDto
 import com.carlosarancibia.playfit.data.remote.PersistedOnboardingDto
 import com.carlosarancibia.playfit.data.remote.PlatformSelectionDto
 import com.carlosarancibia.playfit.data.remote.PlatformDto
-import com.carlosarancibia.playfit.data.remote.PicksResponse
 import com.carlosarancibia.playfit.data.remote.PlayfitApiService
 import com.carlosarancibia.playfit.data.remote.ProfileBuildRequest
 import com.carlosarancibia.playfit.data.remote.ProfileBuildResponse
@@ -65,6 +64,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 internal fun TodayResponse.toDomain() = ProductPlayNextModel(
@@ -227,7 +227,12 @@ internal fun RankedSeedGameDto.toEntity() = PicksEntity(
         gameId = game.gameId,
         title = game.title,
         affinityScore = affinityScore,
+        riskScore = riskScore,
+        confidence = confidence,
         fitReasons = fitReasons.joinToString("||"),
+        cautionReasons = Json.encodeToString(cautionReasons),
+        platformAvailability = platformAvailability,
+        accessStatus = accessStatus,
         genres = game.primaryGenre.orEmpty(),
         primaryGenre = game.primaryGenre.orEmpty(),
         coverPath = game.coverPath.orEmpty(),
@@ -242,12 +247,16 @@ internal fun PicksEntity.toDomain() = RankedSeedGame(
             externalCoverUrl = coverPath.takeIf { it.startsWith("http") },
         ),
         affinityScore = affinityScore,
-        riskScore = 0.0,
-        confidence = ProductConfidence.Medium,
+        riskScore = riskScore,
+        confidence = ProductConfidence.entries.firstOrNull { it.name == confidence }
+            ?: ProductConfidence.Medium,
         fitReasons = fitReasons.split("||").filter { it.isNotBlank() },
-        cautionReasons = emptyList(),
-        platformAvailability = PlatformAvailability.Unknown,
-        accessStatus = GameAccessStatus.Playable,
+        cautionReasons = runCatching { Json.decodeFromString<List<String>>(cautionReasons) }
+            .getOrDefault(emptyList()),
+        platformAvailability = PlatformAvailability.entries.firstOrNull { it.name == platformAvailability }
+            ?: PlatformAvailability.Unknown,
+        accessStatus = GameAccessStatus.entries.firstOrNull { it.name == accessStatus }
+            ?: GameAccessStatus.UnknownPlatform,
         inPlayfitPicks = true,
     )
 

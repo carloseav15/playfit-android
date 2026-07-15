@@ -20,7 +20,7 @@ import com.carlosarancibia.playfit.data.local.entity.PicksEntity
         CacheEntryEntity::class,
         PendingOperationEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class PlayfitDatabase : RoomDatabase() {
@@ -38,6 +38,16 @@ abstract class PlayfitDatabase : RoomDatabase() {
                 db.execSQL(
                     """CREATE TABLE IF NOT EXISTS `pending_operations` (`operationId` TEXT NOT NULL, `operationType` TEXT NOT NULL, `payload` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `attemptCount` INTEGER NOT NULL, PRIMARY KEY(`operationId`))""",
                 )
+            }
+        }
+
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE picks ADD COLUMN riskScore REAL NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE picks ADD COLUMN confidence TEXT NOT NULL DEFAULT 'Medium'")
+                db.execSQL("ALTER TABLE picks ADD COLUMN cautionReasons TEXT NOT NULL DEFAULT '[]'")
+                db.execSQL("ALTER TABLE picks ADD COLUMN platformAvailability TEXT NOT NULL DEFAULT 'Unknown'")
+                db.execSQL("ALTER TABLE picks ADD COLUMN accessStatus TEXT NOT NULL DEFAULT 'Playable'")
             }
         }
     }

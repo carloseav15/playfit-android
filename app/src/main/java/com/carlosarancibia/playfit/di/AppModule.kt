@@ -27,7 +27,7 @@ object AppModule {
             context,
             PlayfitDatabase::class.java,
             "playfit_db",
-        ).addMigrations(PlayfitDatabase.MIGRATION_2_3)
+        ).addMigrations(PlayfitDatabase.MIGRATION_2_3, PlayfitDatabase.MIGRATION_3_4)
             .fallbackToDestructiveMigration(false)
             .build()
     }
