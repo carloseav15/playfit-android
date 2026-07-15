@@ -1,14 +1,8 @@
 package com.carlosarancibia.playfit.ui.screens
 
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +27,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -48,7 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -58,35 +50,30 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.SeedGame
+import com.carlosarancibia.playfit.model.ThemeMode
 import com.carlosarancibia.playfit.ui.components.design.GlowBackground
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import com.carlosarancibia.playfit.ui.components.ThemePickerButton
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 private val mockGameId = "mock-hades"
 private val mockGameTitle = "Hades"
 private val mockGenre = "Roguelike"
-private val mockDescription = "Defy the god of the dead in a hack-and-slash underworld escape."
 private val mockVibeFit = 96
-private val mockWhyMatches = "High action affinity"
-private val mockWatchOut = "Repetitive run loops"
-private val mockConfidence = "High"
 
 @Composable
 fun DecisionIntroScreen(
     onStartCalibration: () -> Unit,
     onSignIn: (() -> Unit)? = null,
-    themeMode: String = "system",
-    onThemeChange: (String) -> Unit = {},
+    themeMode: ThemeMode = ThemeMode.System,
+    onThemeChange: (ThemeMode) -> Unit = {},
     onSearchGames: suspend (String) -> List<SeedGame> = { emptyList() },
 ) {
-    val isDark = isSystemInDarkTheme()
-
     // Fetch coverUrl for Hades dynamically
     var hadesCoverUrl by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
@@ -99,18 +86,6 @@ fun DecisionIntroScreen(
             hadesCoverUrl = "https://vhhnwjuwqbspvllvppnn.supabase.co/storage/v1/object/public/game-covers/hades.jpg"
         }
     }
-
-    // Sparkles pulse animation
-    val infiniteTransition = rememberInfiniteTransition(label = "sparklesPulse")
-    val sparklesScale by infiniteTransition.animateFloat(
-        initialValue = 0.85f,
-        targetValue = 1.15f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "sparklesScale"
-    )
 
     Box(modifier = Modifier.fillMaxSize()) {
         GlowBackground()
@@ -141,7 +116,7 @@ fun DecisionIntroScreen(
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .border(
                                 width = 1.dp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = PlayfitOpacities.low),
                                 shape = RoundedCornerShape(10.dp),
                             ),
                         contentAlignment = Alignment.Center,
@@ -187,7 +162,7 @@ fun DecisionIntroScreen(
                         val curatedGradient = Brush.linearGradient(
                             colors = listOf(
                                 PlayfitExtendedTheme.colors.playfitAccent,
-                                Color(0xFFEC4899), // pink-500 equivalent color
+                                MaterialTheme.colorScheme.tertiary,
                             ),
                         )
                         Text(
@@ -203,19 +178,11 @@ fun DecisionIntroScreen(
                         Spacer(Modifier.height(PlayfitSpacing.sm))
 
                         Text(
-                            text = "Select your platforms, three favorites, and one notable miss. Get one clear recommendation with its complete decision analysis.",
+                            text = "Tell us where you play and a few games you loved or skipped. We'll find your next fit.",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 lineHeight = 20.sp,
                             ),
-                        )
-
-                        Text(
-                            text = "Zero noise. Zero decision fatigue.",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
-                            modifier = Modifier.padding(top = PlayfitSpacing.xs),
                         )
 
                         Spacer(Modifier.height(PlayfitSpacing.md))
@@ -249,11 +216,6 @@ fun DecisionIntroScreen(
                         // ── "Sign In" button ──
                         if (onSignIn != null) {
                             Spacer(Modifier.height(PlayfitSpacing.sm))
-                            val signInContainerColor = if (isDark)
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.70f)
-                            else
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
-
                             Button(
                                 onClick = onSignIn,
                                 modifier = Modifier
@@ -262,7 +224,8 @@ fun DecisionIntroScreen(
                                     .semantics { contentDescription = "playfit.intro.signin" },
                                 shape = MaterialTheme.shapes.large,
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = signInContainerColor,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    contentColor = MaterialTheme.colorScheme.onSurface,
                                 ),
                                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
@@ -272,7 +235,7 @@ fun DecisionIntroScreen(
                                         .fillMaxSize()
                                         .border(
                                             width = 1.dp,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = PlayfitOpacities.soft),
                                             shape = MaterialTheme.shapes.large,
                                         ),
                                     contentAlignment = Alignment.Center,
@@ -300,22 +263,19 @@ fun DecisionIntroScreen(
                         }
                     }
 
-                    // Separation spacer
-                    Spacer(Modifier.height(PlayfitSpacing.xs))
-
-                    // ── Preview section ──
+                    // Compact example, intentionally secondary to the onboarding CTAs.
                     val previewAccent = PlayfitExtendedTheme.colors.playfitAccent
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(MaterialTheme.shapes.extraLarge)
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = PlayfitOpacities.light))
                             .drawBehind {
                                 drawCircle(
                                     brush = Brush.radialGradient(
                                         colors = listOf(
-                                            previewAccent.copy(alpha = 0.30f),
-                                            previewAccent.copy(alpha = 0.0f),
+                                            previewAccent.copy(alpha = PlayfitOpacities.medium),
+                                            previewAccent.copy(alpha = PlayfitOpacities.zero),
                                         ),
                                     ),
                                     radius = size.width * 0.30f,
@@ -324,15 +284,14 @@ fun DecisionIntroScreen(
                             }
                             .border(
                                 width = 1.dp,
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = PlayfitOpacities.soft),
                                 shape = MaterialTheme.shapes.extraLarge,
                             )
-                            .padding(16.dp)
+                            .padding(PlayfitSpacing.md)
                     ) {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.sm),
                         ) {
-                            // Header row: "Playfit Curation" + "% Vibe Fit"
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -345,36 +304,31 @@ fun DecisionIntroScreen(
                                     Icon(
                                         imageVector = Icons.Filled.AutoAwesome,
                                         contentDescription = null,
-                                        modifier = Modifier
-                                            .size(12.dp)
-                                            .scale(sparklesScale),
+                                        modifier = Modifier.size(12.dp),
                                         tint = PlayfitExtendedTheme.colors.playfitAccent,
                                     )
                                     Text(
                                         text = "PLAYFIT CURATION",
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 10.sp,
                                             fontWeight = FontWeight.Black,
                                             color = PlayfitExtendedTheme.colors.playfitAccent,
-                                            letterSpacing = 1.5.sp,
                                         ),
                                     )
                                 }
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(20.dp))
-                                        .background(PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.05f))
+                                        .clip(MaterialTheme.shapes.extraLarge)
+                                        .background(PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = PlayfitOpacities.faint))
                                         .border(
                                             width = 1.dp,
-                                            color = PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.3f),
-                                            shape = RoundedCornerShape(20.dp),
+                                            color = PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = PlayfitOpacities.medium),
+                                            shape = MaterialTheme.shapes.extraLarge,
                                         )
                                         .padding(horizontal = 8.dp, vertical = 2.dp),
                                 ) {
                                     Text(
                                         text = "${mockVibeFit}% Vibe Fit",
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = PlayfitExtendedTheme.colors.playfitAccent,
                                         ),
@@ -382,7 +336,6 @@ fun DecisionIntroScreen(
                                 }
                             }
 
-                            // Game info row
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(PlayfitSpacing.md),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -391,16 +344,16 @@ fun DecisionIntroScreen(
                                     gameId = mockGameId,
                                     title = mockGameTitle,
                                     coverUrl = hadesCoverUrl,
-                                    modifier = Modifier.width(72.dp),
+                                    modifier = Modifier.width(48.dp),
                                 )
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
                                     Text(
                                         text = mockGenre.uppercase(),
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.ExtraBold,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                            letterSpacing = 1.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.prominent),
                                         ),
                                     )
                                     Text(
@@ -410,43 +363,7 @@ fun DecisionIntroScreen(
                                             color = MaterialTheme.colorScheme.onBackground,
                                         ),
                                     )
-                                    Text(
-                                        text = mockDescription,
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        ),
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
                                 }
-                            }
-
-                            // Divider
-                            HorizontalDivider(
-                                thickness = 1.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                            )
-
-                            // Reason rows
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.xs),
-                            ) {
-                                PreviewSignalRow(
-                                    label = "Why it matches",
-                                    value = mockWhyMatches,
-                                    color = PlayfitExtendedTheme.colors.playfitPositive,
-                                )
-                                PreviewSignalRow(
-                                    label = "Watch-outs",
-                                    value = mockWatchOut,
-                                    color = PlayfitExtendedTheme.colors.playfitWarning, // aligned warning color
-                                )
-                                PreviewSignalRow(
-                                    label = "Confidence",
-                                    value = null,
-                                    color = PlayfitExtendedTheme.colors.playfitAccent,
-                                    badge = mockConfidence,
-                                )
                             }
                         }
                     }
@@ -456,60 +373,3 @@ fun DecisionIntroScreen(
         }
     }
 }
-
-// ── Preview Signal Row ──
-@Composable
-private fun PreviewSignalRow(
-    label: String,
-    value: String?,
-    color: Color,
-    badge: String? = null,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(6.dp)
-                .background(color, CircleShape),
-        )
-        Spacer(Modifier.width(PlayfitSpacing.xs))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall.copy(
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
-        )
-        Spacer(Modifier.weight(1f))
-        if (badge != null) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-            ) {
-                Text(
-                    text = badge,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                )
-            }
-        }
-        if (value != null) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                ),
-                textAlign = TextAlign.End,
-                maxLines = 1,
-            )
-        }
-    }
-}
-
-

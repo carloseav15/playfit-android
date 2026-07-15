@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -78,7 +77,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.Platform
 import com.carlosarancibia.playfit.model.PlatformPreset
 import com.carlosarancibia.playfit.model.SeedGame
@@ -91,6 +89,7 @@ import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -163,10 +162,8 @@ fun CustomizePlatformsSheet(
                 if (familyPlatforms.isNotEmpty()) {
                     Text(
                         text = familyDisplayName(family).uppercase(),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Black,
+                        style = MaterialTheme.typography.labelMedium,
                         color = PlayfitExtendedTheme.colors.playfitAccent,
-                        letterSpacing = 0.5.sp,
                         modifier = Modifier.padding(top = PlayfitSpacing.md, bottom = PlayfitSpacing.xs),
                     )
 
@@ -177,9 +174,8 @@ fun CustomizePlatformsSheet(
                         if (handhelds.isNotEmpty()) {
                             Text(
                                 text = "Console / Hybrid",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.strong),
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
                         }
@@ -196,9 +192,8 @@ fun CustomizePlatformsSheet(
                     if (handhelds.isNotEmpty()) {
                         Text(
                             text = "Handheld",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.strong),
                             modifier = Modifier.padding(vertical = 4.dp)
                         )
 
@@ -311,7 +306,7 @@ fun GameSearchSheet(
                 onValueChange = onQueryChange,
                 placeholder = { Text("Search by title...") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
+                shape = MaterialTheme.shapes.large,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 trailingIcon = {
@@ -339,7 +334,7 @@ fun GameSearchSheet(
                 text = "QUICK SUGGESTIONS",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.strong),
             )
             Spacer(Modifier.height(PlayfitSpacing.xs))
             FlowRow(
@@ -362,7 +357,7 @@ fun GameSearchSheet(
                 text = "RESULTS",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.strong),
             )
             Spacer(Modifier.height(PlayfitSpacing.xs))
 
@@ -433,7 +428,7 @@ fun GameSearchSheet(
                         }
                         val metadataString = metadataParts.joinToString(" • ")
 
-                        val rowBorderColor = if (isCurrentSelection) accentColor.copy(alpha = 0.3f)
+                        val rowBorderColor = if (isCurrentSelection) accentColor.copy(alpha = PlayfitOpacities.medium)
                                              else Color.Transparent
 
                         val rowAccessibilityLabel = buildString {
@@ -449,8 +444,8 @@ fun GameSearchSheet(
                                 .clip(MaterialTheme.shapes.medium)
                                 .border(1.dp, rowBorderColor, MaterialTheme.shapes.medium)
                                 .background(
-                                    if (isCurrentSelection) accentColor.copy(alpha = 0.08f)
-                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+                                    if (isCurrentSelection) accentColor.copy(alpha = PlayfitOpacities.subtle)
+                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = PlayfitOpacities.light)
                                 )
                                 .clickable(enabled = !isDisabled) {
                                     onSelect(game)
@@ -475,7 +470,7 @@ fun GameSearchSheet(
                                     text = game.title,
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isDisabled) MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
+                                    color = if (isDisabled) MaterialTheme.colorScheme.onBackground.copy(alpha = PlayfitOpacities.moderate)
                                     else MaterialTheme.colorScheme.onBackground,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -484,16 +479,15 @@ fun GameSearchSheet(
                                 if (statusLabel.isNotBlank()) {
                                     Text(
                                         text = statusLabel.uppercase(),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isDisabled) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (isDisabled) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.half)
                                         else accentColor
                                     )
                                 } else {
                                     Text(
                                         text = metadataString,
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.heavy),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -511,7 +505,7 @@ fun GameSearchSheet(
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.half),
                                     modifier = Modifier.size(16.dp),
                                 )
                             }

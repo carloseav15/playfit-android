@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 @Composable
 fun OnboardingHeader(
@@ -47,7 +48,7 @@ fun OnboardingHeader(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = PlayfitSpacing.md),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(PlayfitSpacing.sm)
     ) {
         stepData.forEach { (label, count, stepIndex) ->
             val isCompleted = currentStep > stepIndex
@@ -62,8 +63,8 @@ fun OnboardingHeader(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = PlayfitOpacities.faint))
                 ) {
                     if (isCompleted) {
                         Box(
@@ -98,12 +99,12 @@ fun OnboardingHeader(
                     }
                 }
 
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(PlayfitSpacing.xs))
 
                 val labelColor = when {
                     isActive -> PlayfitExtendedTheme.colors.playfitAccent
                     isCompleted -> PlayfitExtendedTheme.colors.playfitPositive
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.moderate)
                 }
 
                 Text(
@@ -116,7 +117,7 @@ fun OnboardingHeader(
                 Text(
                     text = count,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.strong),
                     fontWeight = FontWeight.Medium
                 )
             }

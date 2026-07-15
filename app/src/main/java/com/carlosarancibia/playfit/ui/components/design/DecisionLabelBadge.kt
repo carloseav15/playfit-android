@@ -37,7 +37,7 @@ fun DecisionLabelBadge(
         color = foreground,
         modifier = modifier
             .clip(MaterialTheme.shapes.extraLarge)
-            .background(foreground.copy(alpha = 0.15f))
+            .background(foreground.copy(alpha = PlayfitOpacities.light))
             .padding(horizontal = 10.dp, vertical = 4.dp),
     )
 }

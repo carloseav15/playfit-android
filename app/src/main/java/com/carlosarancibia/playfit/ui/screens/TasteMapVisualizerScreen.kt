@@ -3,7 +3,6 @@ package com.carlosarancibia.playfit.ui.screens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,21 +43,23 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 data class GameNode(
     val id: String,
@@ -70,10 +72,10 @@ data class GameNode(
 
 enum class NodeType { Liked, Avoided, Pending }
 
-private fun nodeColor(type: NodeType, isDark: Boolean): Color = when (type) {
-    NodeType.Liked -> if (isDark) Color(0xFF34D399) else Color(0xFF047857)
-    NodeType.Avoided -> if (isDark) Color(0xFFFB7185) else Color(0xFFBE123C)
-    NodeType.Pending -> Color.Gray.copy(alpha = 0.8f)
+private fun nodeColor(type: NodeType, colorScheme: ColorScheme): Color = when (type) {
+    NodeType.Liked -> colorScheme.primary
+    NodeType.Avoided -> colorScheme.error
+    NodeType.Pending -> colorScheme.outline
 }
 
 private fun nodeTypeLabel(type: NodeType): String = when (type) {
@@ -264,27 +266,13 @@ private fun AffinityMapCanvas(
     onNodeTap: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val density = LocalDensity.current
-    val isDark = isSystemInDarkTheme()
-    val textPaintSmall = remember(density) {
-        android.graphics.Paint().apply {
-            color = android.graphics.Color.GRAY
-            alpha = (0.7f * 255).toInt()
-            textAlign = android.graphics.Paint.Align.CENTER
-            textSize = with(density) { 10.sp.toPx() }
-            isAntiAlias = true
-        }
-    }
-    val textPaintBold = remember(density) {
-        android.graphics.Paint().apply {
-            color = android.graphics.Color.GRAY
-            alpha = (0.6f * 255).toInt()
-            textAlign = android.graphics.Paint.Align.CENTER
-            textSize = with(density) { 10.sp.toPx() }
-            isFakeBoldText = true
-            isAntiAlias = true
-        }
-    }
+    val colorScheme = MaterialTheme.colorScheme
+    val textMeasurer = rememberTextMeasurer()
+    val quadrantLabelStyle = MaterialTheme.typography.labelSmall.copy(color = Color.Gray.copy(alpha = PlayfitOpacities.heavy))
+    val axisLabelStyle = MaterialTheme.typography.labelSmall.copy(
+        color = Color.Gray.copy(alpha = PlayfitOpacities.strong),
+        fontWeight = FontWeight.Bold,
+    )
 
     var canvasWidthPx by remember { mutableStateOf(0f) }
     var canvasHeightPx by remember { mutableStateOf(0f) }
@@ -341,13 +329,21 @@ private fun AffinityMapCanvas(
                 }
             },
     ) {
+        fun DrawScope.drawCenteredText(text: String, style: TextStyle, x: Float, y: Float) {
+            val measured = textMeasurer.measure(text = text, style = style)
+            drawText(
+                textLayoutResult = measured,
+                topLeft = Offset(x - measured.size.width / 2f, y - measured.size.height / 2f),
+            )
+        }
+
         Canvas(modifier = Modifier.fillMaxSize()) {
             val canvasSize = minOf(size.width, size.height)
             val centerX = size.width / 2f
             val centerY = size.height / 2f
             val scale = canvasSize / 2f - 20f
-            val gridColor = Color.Black.copy(alpha = 0.05f)
-            val axisColor = Color.Black.copy(alpha = 0.08f)
+            val gridColor = Color.Black.copy(alpha = PlayfitOpacities.faint)
+            val axisColor = Color.Black.copy(alpha = PlayfitOpacities.subtle)
 
             val dashPathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
 
@@ -372,21 +368,21 @@ private fun AffinityMapCanvas(
                 "Cozy & Story-Rich" to Offset(centerX - scale * 0.6f, centerY + scale * 0.6f),
                 "Demanding & Linear" to Offset(centerX + scale * 0.6f, centerY + scale * 0.6f),
             ).forEach { (label, pos) ->
-                drawContext.canvas.nativeCanvas.drawText(label, pos.x, pos.y, textPaintSmall)
+                drawCenteredText(label, quadrantLabelStyle, pos.x, pos.y)
             }
 
-            drawContext.canvas.nativeCanvas.drawText("Demanding →", size.width - 45f, centerY - 10f, textPaintBold)
-            drawContext.canvas.nativeCanvas.drawText("← Cozy", 40f, centerY - 10f, textPaintBold)
-            drawContext.canvas.nativeCanvas.drawText("Systems ↑", centerX - 35f, 35f, textPaintBold)
-            drawContext.canvas.nativeCanvas.drawText("Story ↓", centerX - 25f, size.height - 35f, textPaintBold)
+            drawCenteredText("Demanding →", axisLabelStyle, size.width - 45f, centerY - 10f)
+            drawCenteredText("← Cozy", axisLabelStyle, 40f, centerY - 10f)
+            drawCenteredText("Systems ↑", axisLabelStyle, centerX - 35f, 35f)
+            drawCenteredText("Story ↓", axisLabelStyle, centerX - 25f, size.height - 35f)
 
             nodes.forEach { node ->
                 val cx = centerX + (node.x / 100.0 * scale).toFloat()
                 val cy = centerY - (node.y / 100.0 * scale).toFloat()
                 val isSelected = node.id == activeNodeId
-                val color = nodeColor(node.type, isDark)
+                val color = nodeColor(node.type, colorScheme)
 
-                drawCircle(color = color.copy(alpha = if (isSelected) 0.35f else 0.15f),
+                drawCircle(color = color.copy(alpha = if (isSelected) PlayfitOpacities.medium else PlayfitOpacities.light),
                     radius = if (isSelected) 24f else 16f, center = Offset(cx, cy))
                 drawCircle(color = color, radius = if (isSelected) 10f else 8f, center = Offset(cx, cy))
                 drawCircle(color = Color.White, radius = if (isSelected) 10f else 8f,
@@ -402,7 +398,7 @@ private fun MapNodeCard(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    val nodeCol = nodeColor(node.type, isSystemInDarkTheme())
+    val nodeCol = nodeColor(node.type, MaterialTheme.colorScheme)
 
     Card(
         modifier = Modifier
@@ -415,7 +411,7 @@ private fun MapNodeCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) {
-                nodeCol.copy(alpha = 0.16f)
+                nodeCol.copy(alpha = PlayfitOpacities.light)
             } else {
                 MaterialTheme.colorScheme.surfaceContainerLow
             },
@@ -452,7 +448,7 @@ private fun MapNodeCard(
                         color = nodeCol,
                         modifier = Modifier
                             .background(
-                                color = nodeCol.copy(alpha = 0.12f),
+                                color = nodeCol.copy(alpha = PlayfitOpacities.soft),
                                 shape = RoundedCornerShape(20.dp),
                             )
                             .padding(horizontal = 6.dp, vertical = 2.dp),

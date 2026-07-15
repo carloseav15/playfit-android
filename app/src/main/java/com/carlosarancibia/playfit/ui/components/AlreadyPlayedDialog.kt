@@ -121,7 +121,7 @@ fun AlreadyPlayedDialog(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(64.dp),
-                                shape = RoundedCornerShape(16.dp),
+                                shape = MaterialTheme.shapes.large,
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,

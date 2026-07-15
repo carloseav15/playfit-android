@@ -9,18 +9,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import com.carlosarancibia.playfit.model.ProductTasteMapTrait
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 @Composable
 fun TasteRadarChart(
@@ -51,8 +50,9 @@ fun TasteRadarChart(
     val accentColor = PlayfitExtendedTheme.colors.playfitAccent
     val positiveColor = PlayfitExtendedTheme.colors.playfitPositive
     val negativeColor = PlayfitExtendedTheme.colors.playfitNegative
-    val outlineColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
-    val textStyle = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold)
+    val outlineColor = MaterialTheme.colorScheme.outline.copy(alpha = PlayfitOpacities.mild)
+    val textStyle = MaterialTheme.typography.labelSmall
+    val textMeasurer = rememberTextMeasurer()
 
     Canvas(
         modifier = modifier
@@ -108,19 +108,18 @@ fun TasteRadarChart(
             
             val trait = radarTraits[i]
             val labelText = trait.label
-            
-            val textPaint = android.text.TextPaint().apply {
-                color = (if (trait.direction == "positive") positiveColor else negativeColor).toArgb()
-                textSize = textStyle.fontSize.toPx()
-                typeface = android.graphics.Typeface.create(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD)
-                textAlign = android.graphics.Paint.Align.CENTER
-            }
-            
-            drawContext.canvas.nativeCanvas.drawText(
-                labelText,
-                labelX,
-                labelY + 4.dp.toPx(),
-                textPaint
+            val labelColor = if (trait.direction == "positive") positiveColor else negativeColor
+
+            val measuredLabel = textMeasurer.measure(
+                text = labelText,
+                style = textStyle.copy(color = labelColor)
+            )
+            drawText(
+                textLayoutResult = measuredLabel,
+                topLeft = Offset(
+                    labelX - measuredLabel.size.width / 2f,
+                    labelY - measuredLabel.size.height / 2f
+                )
             )
         }
 
@@ -143,7 +142,7 @@ fun TasteRadarChart(
 
         drawPath(
             path = valuePath,
-            color = accentColor.copy(alpha = 0.22f)
+            color = accentColor.copy(alpha = PlayfitOpacities.muted)
         )
         drawPath(
             path = valuePath,

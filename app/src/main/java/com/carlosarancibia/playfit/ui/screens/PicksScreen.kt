@@ -51,10 +51,12 @@ import com.carlosarancibia.playfit.ui.components.design.GlowBackground
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
+import com.carlosarancibia.playfit.ui.components.design.ShimmerCard
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import com.carlosarancibia.playfit.ui.viewmodel.PlayfitUiState
 import com.carlosarancibia.playfit.ui.viewmodel.PlayfitViewModel
 import com.carlosarancibia.playfit.ui.viewmodel.ProductUtils
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,9 +85,9 @@ fun PicksScreen(
                     )
                 },
                 scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = PlayfitOpacities.opaque),
                 )
             )
         },
@@ -223,20 +225,9 @@ private fun PicksLoadingState() {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = PlayfitSpacing.xl),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.md),
     ) {
-        Text(
-            text = "Loading saved picks...",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        Spacer(Modifier.height(PlayfitSpacing.sm))
-        Text(
-            text = "Checking your saved recommendations.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        repeat(3) { ShimmerCard() }
     }
 }
 

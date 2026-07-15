@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -41,7 +40,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.ProductDecisionFeedback
 import com.carlosarancibia.playfit.model.ProductTasteHistoryEntry
 import com.carlosarancibia.playfit.model.ProductTasteModel
@@ -50,6 +48,7 @@ import com.carlosarancibia.playfit.ui.components.design.DecisionTone
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 private enum class ActivityTab { All, Picks, Preferences }
 
@@ -270,7 +269,7 @@ private fun ActivityRow(
         }
     }
 
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PlayfitOpacities.half))
 
     if (showManageDialog) {
         AlertDialog(
@@ -369,7 +368,6 @@ private fun ChangeSignalSheet(
                 text = "CHANGE SIGNAL",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(PlayfitSpacing.sm))
@@ -389,12 +387,12 @@ private fun ChangeSignalSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = MaterialTheme.shapes.large,
                 ) {
                     Text(
                         text = label,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
                     )
                 }
             }

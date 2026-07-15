@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.ProductTasteMapTrait
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -36,7 +37,7 @@ fun TraitPillCloud(
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = PlayfitOpacities.light),
                     shape = RoundedCornerShape(12.dp)
                 )
                 .padding(PlayfitSpacing.md),
@@ -45,7 +46,7 @@ fun TraitPillCloud(
             Text(
                 text = "No signals recorded yet.",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.strong)
             )
         }
         return
@@ -64,14 +65,14 @@ fun TraitPillCloud(
             val isMedium = ratio >= 0.3 && ratio < 0.6
             
             val borderCol = if (isLoved) {
-                PlayfitExtendedTheme.colors.playfitPositive.copy(alpha = if (isStrong) 0.3f else 0.15f)
+                PlayfitExtendedTheme.colors.playfitPositive.copy(alpha = if (isStrong) PlayfitOpacities.medium else PlayfitOpacities.light)
             } else {
-                PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = if (isStrong) 0.3f else 0.15f)
+                PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = if (isStrong) PlayfitOpacities.medium else PlayfitOpacities.light)
             }
             val bgCol = if (isLoved) {
-                PlayfitExtendedTheme.colors.playfitPositive.copy(alpha = if (isStrong) 0.12f else 0.06f)
+                PlayfitExtendedTheme.colors.playfitPositive.copy(alpha = if (isStrong) PlayfitOpacities.soft else PlayfitOpacities.faint)
             } else {
-                PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = if (isStrong) 0.12f else 0.06f)
+                PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = if (isStrong) PlayfitOpacities.soft else PlayfitOpacities.faint)
             }
             val textCol = if (isLoved) {
                 PlayfitExtendedTheme.colors.playfitPositive
@@ -109,7 +110,7 @@ fun TraitPillCloud(
                 Box(
                     modifier = Modifier
                         .background(
-                            color = textCol.copy(alpha = 0.1f),
+                            color = textCol.copy(alpha = PlayfitOpacities.low),
                             shape = MaterialTheme.shapes.small
                         )
                         .padding(horizontal = 5.dp, vertical = 1.dp)

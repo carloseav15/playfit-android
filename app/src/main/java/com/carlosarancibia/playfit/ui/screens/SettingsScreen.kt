@@ -61,6 +61,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.Platform
+import com.carlosarancibia.playfit.model.ThemeMode
 import com.carlosarancibia.playfit.model.fallbackPlatforms
 import com.carlosarancibia.playfit.ui.components.design.MoonIcon
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
@@ -70,6 +71,7 @@ import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import com.carlosarancibia.playfit.ui.viewmodel.AuthState
 import com.carlosarancibia.playfit.ui.viewmodel.PlayfitUiState
 import com.carlosarancibia.playfit.ui.viewmodel.PlayfitViewModel
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 private enum class SettingsViewMode {
     Main, Appearance, Platforms, Privacy, Developer,
@@ -92,6 +94,8 @@ fun SettingsScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     val authState by viewModel?.authState?.collectAsState() ?: remember { mutableStateOf(AuthState()) }
     val uiState by viewModel?.ui?.collectAsState() ?: remember { mutableStateOf(PlayfitUiState()) }
+    val themeMode by viewModel?.themeMode?.collectAsState() ?: remember { mutableStateOf(ThemeMode.System) }
+    val selectedPlatformIds by viewModel?.selectedPlatformIds?.collectAsState() ?: remember { mutableStateOf(emptySet()) }
 
     Box(
         modifier = Modifier
@@ -120,11 +124,13 @@ fun SettingsScreen(
             )
             SettingsViewMode.Appearance -> AppearanceView(
                 onBack = { viewMode = SettingsViewMode.Main },
-                viewModel = viewModel,
+                currentTheme = themeMode,
+                onThemeChange = { viewModel?.setThemeMode(it) },
             )
             SettingsViewMode.Platforms -> PlatformSelectionView(
                 onBack = { viewMode = SettingsViewMode.Main },
-                viewModel = viewModel,
+                persistedSelectedPlatformIds = selectedPlatformIds,
+                onUpdatePlatforms = { viewModel?.updatePlatforms(it) },
                 platforms = platforms,
                 platformsLoading = platformsLoading,
                 platformsError = platformsError,
@@ -140,7 +146,7 @@ fun SettingsScreen(
                 if (BuildConfig.DEBUG) {
                     DeveloperSettingsView(
                         onBack = { viewMode = SettingsViewMode.Main },
-                        viewModel = viewModel,
+                        onRefresh = { viewModel?.refreshRecommendations() },
                     )
                 } else {
                     SettingsMainView(
@@ -416,7 +422,7 @@ private fun SettingsNavRow(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.strong),
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -433,7 +439,8 @@ fun SettingsSection(
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
             modifier = Modifier.padding(PlayfitSpacing.md),
@@ -450,27 +457,3 @@ fun SettingsSection(
     }
 }
 
-@Composable
-fun SubViewTopBar(title: String, onBack: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = PlayfitSpacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(onClick = onBack) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.onBackground
-            )
-        }
-        Spacer(Modifier.width(PlayfitSpacing.sm))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-    }
-}

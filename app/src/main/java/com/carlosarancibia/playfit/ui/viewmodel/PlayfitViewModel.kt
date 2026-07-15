@@ -22,6 +22,7 @@ import com.carlosarancibia.playfit.model.ProductTasteModel
 import com.carlosarancibia.playfit.model.Platform
 import com.carlosarancibia.playfit.model.RankedSeedGame
 import com.carlosarancibia.playfit.model.SeedGame
+import com.carlosarancibia.playfit.model.ThemeMode
 import com.carlosarancibia.playfit.model.fallbackPlatforms
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -139,8 +140,8 @@ class PlayfitViewModel @Inject constructor(
     private val _onboardingCompleted = MutableStateFlow(false)
     val onboardingCompleted: StateFlow<Boolean> = _onboardingCompleted.asStateFlow()
 
-    private val _themeMode = MutableStateFlow("system")
-    val themeMode: StateFlow<String> = _themeMode.asStateFlow()
+    private val _themeMode = MutableStateFlow(ThemeMode.System)
+    val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
     private val _excludedIds = MutableStateFlow<Set<String>>(emptySet())
     val excludedIds: StateFlow<Set<String>> = _excludedIds.asStateFlow()
@@ -151,16 +152,39 @@ class PlayfitViewModel @Inject constructor(
     val selectedPlatformIds: StateFlow<Set<String>> = _selectedPlatformIds.asStateFlow()
 
     // Onboarding temporary states (survive layout changes / recreation)
-    val onboardingStep = MutableStateFlow(0)
-    val onboardingSelectedPlatforms = MutableStateFlow(setOf<String>())
-    val onboardingLikedGames = MutableStateFlow(listOf<SeedGame?>(null, null, null))
-    val onboardingDislikedGames = MutableStateFlow(listOf<SeedGame?>(null))
+    private val _onboardingStep = MutableStateFlow(0)
+    val onboardingStep: StateFlow<Int> = _onboardingStep.asStateFlow()
+
+    private val _onboardingSelectedPlatforms = MutableStateFlow(setOf<String>())
+    val onboardingSelectedPlatforms: StateFlow<Set<String>> = _onboardingSelectedPlatforms.asStateFlow()
+
+    private val _onboardingLikedGames = MutableStateFlow(listOf<SeedGame?>(null, null, null))
+    val onboardingLikedGames: StateFlow<List<SeedGame?>> = _onboardingLikedGames.asStateFlow()
+
+    private val _onboardingDislikedGames = MutableStateFlow(listOf<SeedGame?>(null))
+    val onboardingDislikedGames: StateFlow<List<SeedGame?>> = _onboardingDislikedGames.asStateFlow()
+
+    fun setOnboardingStep(step: Int) {
+        _onboardingStep.value = step
+    }
+
+    fun setOnboardingSelectedPlatforms(ids: Set<String>) {
+        _onboardingSelectedPlatforms.value = ids
+    }
+
+    fun setOnboardingLikedGames(games: List<SeedGame?>) {
+        _onboardingLikedGames.value = games
+    }
+
+    fun setOnboardingDislikedGames(games: List<SeedGame?>) {
+        _onboardingDislikedGames.value = games
+    }
 
     fun resetOnboardingState() {
-        onboardingStep.value = 0
-        onboardingSelectedPlatforms.value = emptySet()
-        onboardingLikedGames.value = listOf(null, null, null)
-        onboardingDislikedGames.value = listOf(null)
+        _onboardingStep.value = 0
+        _onboardingSelectedPlatforms.value = emptySet()
+        _onboardingLikedGames.value = listOf(null, null, null)
+        _onboardingDislikedGames.value = listOf(null)
     }
 
     private var saveJob: Job? = null
@@ -179,7 +203,7 @@ class PlayfitViewModel @Inject constructor(
         }
         viewModelScope.launch {
             preferencesDataStore.themeMode.collect { mode ->
-                _themeMode.value = mode
+                _themeMode.value = ThemeMode.fromApiValue(mode)
             }
         }
         authCoordinator.observeSession()
@@ -964,9 +988,9 @@ class PlayfitViewModel @Inject constructor(
         status == null && rating == null && !inPlayfitPicks && !inBacklog &&
             !inWishlist && !excluded
 
-    fun setThemeMode(mode: String) {
+    fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
-            preferencesDataStore.setThemeMode(mode)
+            preferencesDataStore.setThemeMode(mode.apiValue)
         }
     }
 

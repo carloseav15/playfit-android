@@ -103,7 +103,7 @@ fun CompassIcon(modifier: Modifier = Modifier, color: Color) {
         }
         drawPath(path = needlePath, color = color)
         drawLine(
-            color = color.copy(alpha = 0.5f),
+            color = color.copy(alpha = PlayfitOpacities.half),
             start = Offset(w / 2f, h * 0.23f),
             end = Offset(w / 2f, h * 0.77f),
             strokeWidth = w * 0.04f

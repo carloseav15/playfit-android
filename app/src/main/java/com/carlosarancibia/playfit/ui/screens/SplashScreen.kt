@@ -36,6 +36,7 @@ import androidx.compose.foundation.Image
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import kotlinx.coroutines.delay
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 private val LOGO_SIZE = 120.dp
 
@@ -108,8 +109,8 @@ fun SplashScreen(
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            accent.copy(alpha = 0.35f),
-                            accent.copy(alpha = 0.0f),
+                            accent.copy(alpha = PlayfitOpacities.medium),
+                            accent.copy(alpha = PlayfitOpacities.zero),
                         ),
                     ),
                     radius = size.width * 0.85f,
@@ -118,8 +119,8 @@ fun SplashScreen(
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            toneAccent.copy(alpha = 0.20f),
-                            toneAccent.copy(alpha = 0.0f),
+                            toneAccent.copy(alpha = PlayfitOpacities.muted),
+                            toneAccent.copy(alpha = PlayfitOpacities.zero),
                         ),
                     ),
                     radius = size.width * 0.75f,

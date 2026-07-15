@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.ProductDecisionFeedback
 import com.carlosarancibia.playfit.model.RankedSeedGame
 import com.carlosarancibia.playfit.ui.components.AlreadyPlayedDialog
-import com.carlosarancibia.playfit.ui.components.FeedbackChips
 import com.carlosarancibia.playfit.ui.components.ReasonList
 import com.carlosarancibia.playfit.ui.components.ReasonTone
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
@@ -46,10 +45,8 @@ fun PrimaryRecommendationCard(
     onAlreadyPlayed: (ProductDecisionFeedback) -> Unit,
     onShowAnotherOption: () -> Unit,
     onOpenDetail: () -> Unit,
-    onFeedback: (ProductDecisionFeedback) -> Unit = {},
 ) {
     var showPlayedDialog by remember { mutableStateOf(false) }
-    var showFeedbackChips by remember { mutableStateOf(false) }
 
     PlayfitGlassCard {
         Column(verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.md)) {
@@ -141,62 +138,34 @@ fun PrimaryRecommendationCard(
                 )
             }
 
-            // Feedback chips (inline in card, matches iOS showReasonPicker)
-            if (showFeedbackChips) {
-                FeedbackChips(
-                    onSelect = { feedback ->
-                        onFeedback(feedback)
-                        showFeedbackChips = false
-                    },
-                )
+            // Action buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(PlayfitSpacing.sm),
+            ) {
+                FilledTonalButton(
+                    onClick = { showPlayedDialog = true },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Already Played", fontWeight = FontWeight.Bold)
+                }
+                FilledTonalButton(
+                    onClick = onNotForMe,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("No, skip this", fontWeight = FontWeight.Bold)
+                }
             }
 
-            // Action buttons
-            if (showFeedbackChips) {
-                TextButton(
-                    onClick = {
-                        onNotForMe()
-                        showFeedbackChips = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text = "Skip feedback",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(PlayfitSpacing.sm),
-                ) {
-                    OutlinedButton(
-                        onClick = { showPlayedDialog = true },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text("Already Played", fontWeight = FontWeight.Bold)
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            showFeedbackChips = true
-                        },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text("No, skip this", fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                TextButton(
-                    onClick = onShowAnotherOption,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text = "Show me another option",
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            TextButton(
+                onClick = onShowAnotherOption,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = "Show me another option",
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

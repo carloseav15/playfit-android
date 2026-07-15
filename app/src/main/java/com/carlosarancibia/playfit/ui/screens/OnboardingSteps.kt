@@ -79,7 +79,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.Platform
 import com.carlosarancibia.playfit.model.PlatformPreset
 import com.carlosarancibia.playfit.model.SeedGame
@@ -92,6 +91,7 @@ import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 @Composable
 fun PlatformStep(
@@ -184,14 +184,14 @@ fun PlatformPresetCard(
     val isPartiallySelected = selectedCount > 0 && !isSelected
 
     val containerColor = when {
-        isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-        isPartiallySelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = PlayfitOpacities.half)
+        isPartiallySelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = PlayfitOpacities.medium)
+        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = PlayfitOpacities.medium)
     }
     val borderColor = when {
         isSelected -> MaterialTheme.colorScheme.primary
-        isPartiallySelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+        isPartiallySelected -> MaterialTheme.colorScheme.primary.copy(alpha = PlayfitOpacities.half)
+        else -> MaterialTheme.colorScheme.outline.copy(alpha = PlayfitOpacities.light)
     }
     val tintColor = when {
         isSelected -> MaterialTheme.colorScheme.primary
@@ -347,10 +347,10 @@ fun GameSlotCard(
 ) {
     val accentColor = if (isLiked) PlayfitExtendedTheme.colors.playfitAccent
     else PlayfitExtendedTheme.colors.playfitNegative
-    val cardBgColor = if (isLiked) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
-    else PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = 0.05f)
-    val dashColor = if (isLiked) MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
-    else PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = 0.25f)
+    val cardBgColor = if (isLiked) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = PlayfitOpacities.light)
+    else PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = PlayfitOpacities.faint)
+    val dashColor = if (isLiked) MaterialTheme.colorScheme.outline.copy(alpha = PlayfitOpacities.mild)
+    else PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = PlayfitOpacities.mild)
 
     if (game != null) {
         Box(
@@ -372,7 +372,7 @@ fun GameSlotCard(
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, MaterialTheme.colorScheme.scrim.copy(alpha = 0.75f)),
+                            colors = listOf(Color.Transparent, MaterialTheme.colorScheme.scrim.copy(alpha = PlayfitOpacities.heavy)),
                             startY = 100f
                         )
                     )
@@ -382,8 +382,7 @@ fun GameSlotCard(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = game.title,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelSmall,
                         color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -398,7 +397,7 @@ fun GameSlotCard(
                     .padding(8.dp)
                     .size(32.dp)
                     .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.86f))
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = PlayfitOpacities.nearOpaque))
                     .clickable { onRemove() },
                 contentAlignment = Alignment.Center
             ) {
@@ -438,24 +437,22 @@ fun GameSlotCard(
                         .size(36.dp)
                         .clip(RoundedCornerShape(18.dp))
                         .background(
-                            if (isLiked) PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.12f)
-                            else PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = 0.12f)
+                            if (isLiked) PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = PlayfitOpacities.soft)
+                            else PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = PlayfitOpacities.soft)
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "+",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.titleLarge,
                         color = accentColor
                     )
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = indexLabel,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.strong)
                 )
             }
         }

@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -37,22 +36,17 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,34 +54,51 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.carlosarancibia.playfit.model.ThemeMode
 import com.carlosarancibia.playfit.ui.components.design.MoonIcon
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.components.design.SparklesIcon
 import com.carlosarancibia.playfit.ui.components.design.SunIcon
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
-import com.carlosarancibia.playfit.ui.viewmodel.PlayfitViewModel
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppearanceView(
     onBack: () -> Unit,
-    viewModel: PlayfitViewModel? = null,
+    currentTheme: ThemeMode = ThemeMode.System,
+    onThemeChange: (ThemeMode) -> Unit = {},
 ) {
-    val savedTheme by viewModel?.preferencesDataStore?.themeMode
-        ?.collectAsState(initial = "system") ?: remember { mutableStateOf("system") }
-    var currentTheme by remember { mutableStateOf(savedTheme) }
-    val scope = rememberCoroutineScope()
-    LaunchedEffect(savedTheme) {
-        currentTheme = savedTheme
-    }
 
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "App Appearance",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                },
+            )
+        },
+        containerColor = Color.Transparent,
+    ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(innerPadding)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = PlayfitSpacing.md),
     ) {
-        SubViewTopBar(title = "App Appearance", onBack = onBack)
         Spacer(Modifier.height(PlayfitSpacing.sm))
         Text(
             text = "Choose your preferred theme for the interface.",
@@ -98,22 +109,15 @@ fun AppearanceView(
         SettingsSection(title = "Theme") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(
-                    "Light" to "light",
-                    "Dark" to "dark",
-                    "System" to "system",
+                    "Light" to ThemeMode.Light,
+                    "Dark" to ThemeMode.Dark,
+                    "System" to ThemeMode.System,
                 ).forEach { (label, value) ->
                     val isSelected = currentTheme == value
                     Button(
-                        onClick = {
-                            currentTheme = value
-                            viewModel?.let { vm ->
-                                scope.launch {
-                                    vm.preferencesDataStore.setThemeMode(value)
-                                }
-                            }
-                        },
+                        onClick = { onThemeChange(value) },
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isSelected) PlayfitExtendedTheme.colors.playfitAccent
                             else MaterialTheme.colorScheme.surfaceContainerHighest,
@@ -126,9 +130,9 @@ fun AppearanceView(
                             horizontalArrangement = Arrangement.Center
                         ) {
                             when (value) {
-                                "light" -> SunIcon(modifier = Modifier.size(16.dp), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
-                                "dark" -> MoonIcon(modifier = Modifier.size(14.dp), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
-                                else -> Icon(
+                                ThemeMode.Light -> SunIcon(modifier = Modifier.size(16.dp), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
+                                ThemeMode.Dark -> MoonIcon(modifier = Modifier.size(14.dp), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
+                                ThemeMode.System -> Icon(
                                     imageVector = Icons.Default.Settings,
                                     contentDescription = null,
                                     modifier = Modifier.size(16.dp),
@@ -149,5 +153,6 @@ fun AppearanceView(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = PlayfitSpacing.sm),
         )
+    }
     }
 }

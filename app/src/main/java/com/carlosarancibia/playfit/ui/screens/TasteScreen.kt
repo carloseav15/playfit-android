@@ -20,13 +20,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +44,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -55,6 +60,7 @@ import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import com.carlosarancibia.playfit.ui.components.TasteRadarChart
 import com.carlosarancibia.playfit.ui.components.TraitPillCloud
 import com.carlosarancibia.playfit.ui.screens.TasteProfileTab
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 private enum class TasteTab { YourTaste, Activity }
 
@@ -79,6 +85,7 @@ fun TasteScreen(
     isRefreshing: Boolean = false,
 ) {
     var activeTab by remember { mutableStateOf(TasteTab.YourTaste) }
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
     if (isLoading && !hasProfile && tasteModel == null) {
         TasteBlockingState(
@@ -107,28 +114,41 @@ fun TasteScreen(
         return
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+    ) {
         GlowBackground()
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = onRefresh,
-            modifier = Modifier.fillMaxSize(),
-        ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = PlayfitSpacing.md),
-        ) {
-            Spacer(Modifier.height(PlayfitSpacing.md))
-            Text(
-                text = "Your Taste",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                LargeTopAppBar(
+                    title = { Text("Your Taste") },
+                    scrollBehavior = scrollBehavior,
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = PlayfitOpacities.opaque),
+                    ),
+                )
+            },
+        ) { innerPadding ->
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = PlayfitSpacing.md),
+                ) {
 
-            Spacer(Modifier.height(PlayfitSpacing.sm))
+                    Spacer(Modifier.height(PlayfitSpacing.sm))
 
-            Row(
+                    Row(
                 horizontalArrangement = Arrangement.spacedBy(PlayfitSpacing.sm),
             ) {
                 TasteTab.entries.forEach { tab ->
@@ -152,9 +172,9 @@ fun TasteScreen(
                 }
             }
 
-            Spacer(Modifier.height(PlayfitSpacing.md))
+                    Spacer(Modifier.height(PlayfitSpacing.md))
 
-            if (pendingSync || showingStaleData || error != null) {
+                    if (pendingSync || showingStaleData || error != null) {
                 TasteStatusBanner(
                     message = when {
                         pendingSync -> "Changes saved on this device; waiting to sync."
@@ -165,7 +185,7 @@ fun TasteScreen(
                 Spacer(Modifier.height(PlayfitSpacing.md))
             }
 
-            when (activeTab) {
+                    when (activeTab) {
                 TasteTab.YourTaste -> TasteProfileTab(
                     profile = profile,
                     tasteModel = tasteModel,
@@ -178,10 +198,11 @@ fun TasteScreen(
                     onChangeSignal = onChangeSignal,
                     onDeleteSignal = onDeleteSignal,
                 )
+                    }
+                }
             }
         }
     }
-}
 }
 
 @Composable
@@ -227,12 +248,12 @@ private fun TasteStatusBanner(message: String) {
             .fillMaxWidth()
             .background(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.medium,
             )
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PlayfitOpacities.moderate),
+                shape = MaterialTheme.shapes.medium,
             )
             .padding(PlayfitSpacing.sm),
     ) {
@@ -244,8 +265,6 @@ private fun TasteStatusBanner(message: String) {
         )
     }
 }
-
-
 
 
 

@@ -12,6 +12,16 @@ enum class ProductAccessStatus {
             entries.firstOrNull { it.apiValue == value.lowercase() }
     }
 }
+enum class ThemeMode {
+    System, Light, Dark;
+
+    val apiValue: String get() = name.lowercase()
+
+    companion object {
+        fun fromApiValue(value: String?): ThemeMode =
+            entries.firstOrNull { it.apiValue == value?.lowercase() } ?: System
+    }
+}
 enum class ProductConfidence { Low, Medium, High }
 enum class SeedReleaseState { Released, Unreleased }
 enum class PlatformAvailability { Available, Unavailable, Unknown }

@@ -27,6 +27,7 @@ import com.carlosarancibia.playfit.model.RankedSeedGame
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 @Composable
 fun AlternativeRow(
@@ -73,13 +74,13 @@ fun AlternativeRow(
             Box(
                 modifier = Modifier
                     .background(
-                        color = PlayfitExtendedTheme.colors.playfitPositive.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(8.dp)
+                        color = PlayfitExtendedTheme.colors.playfitPositive.copy(alpha = PlayfitOpacities.low),
+                        shape = MaterialTheme.shapes.small
                     )
                     .border(
                         width = 1.dp,
-                        color = PlayfitExtendedTheme.colors.playfitPositive.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(8.dp)
+                        color = PlayfitExtendedTheme.colors.playfitPositive.copy(alpha = PlayfitOpacities.muted),
+                        shape = MaterialTheme.shapes.small
                     )
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {

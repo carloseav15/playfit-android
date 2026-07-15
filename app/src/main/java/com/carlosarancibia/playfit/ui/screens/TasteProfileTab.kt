@@ -31,6 +31,7 @@ import com.carlosarancibia.playfit.ui.components.TraitPillCloud
 import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 private fun confidencePercent(profile: ProductProfile): Int {
     return when {
@@ -152,7 +153,7 @@ fun TasteProfileTab(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.1f),
+                    color = PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = PlayfitOpacities.low),
                     shape = RoundedCornerShape(14.dp),
                 )
                 .clickable(onClick = onOpenMap)

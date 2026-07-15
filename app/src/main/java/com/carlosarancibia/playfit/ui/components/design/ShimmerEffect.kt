@@ -43,9 +43,9 @@ fun ShimmerBox(
     val shimmerColor = MaterialTheme.colorScheme.onSurface
     val brush = Brush.linearGradient(
         colors = listOf(
-            shimmerColor.copy(alpha = 0.12f),
-            shimmerColor.copy(alpha = 0.05f),
-            shimmerColor.copy(alpha = 0.12f),
+            shimmerColor.copy(alpha = PlayfitOpacities.soft),
+            shimmerColor.copy(alpha = PlayfitOpacities.faint),
+            shimmerColor.copy(alpha = PlayfitOpacities.soft),
         ),
         start = Offset(translateAnim, 0f),
         end = Offset(translateAnim + 300f, 0f),
@@ -65,7 +65,7 @@ fun ShimmerCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)),
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = PlayfitOpacities.medium)),
     ) {
         ShimmerBox(
             modifier = Modifier
@@ -73,19 +73,19 @@ fun ShimmerCard(
                 .height(120.dp),
             shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         )
-        Column(modifier = Modifier.padding(all = 12.dp)) {
+        Column(modifier = Modifier.padding(all = PlayfitSpacing.md)) {
             ShimmerBox(
                 modifier = Modifier
                     .fillMaxWidth(0.7f)
                     .height(16.dp),
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(PlayfitSpacing.xs))
             ShimmerBox(
                 modifier = Modifier
                     .fillMaxWidth(0.5f)
                     .height(12.dp),
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(PlayfitSpacing.sm))
             ShimmerBox(
                 modifier = Modifier
                     .fillMaxWidth()

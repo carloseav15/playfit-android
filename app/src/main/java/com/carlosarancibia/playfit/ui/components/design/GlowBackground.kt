@@ -49,8 +49,8 @@ fun GlowBackground(
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    accentColor.copy(alpha = if (isDark) 0.12f else 0.06f),
-                    accentColor.copy(alpha = 0.0f)
+                    accentColor.copy(alpha = if (isDark) PlayfitOpacities.soft else PlayfitOpacities.faint),
+                    accentColor.copy(alpha = PlayfitOpacities.zero)
                 ),
                 center = androidx.compose.ui.geometry.Offset(size.width * 0.95f, size.height * 0.05f),
                 radius = size.width * 0.8f * pulseScale
@@ -63,8 +63,8 @@ fun GlowBackground(
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    toneColor.copy(alpha = if (isDark) 0.08f else 0.04f),
-                    toneColor.copy(alpha = 0.0f)
+                    toneColor.copy(alpha = if (isDark) PlayfitOpacities.subtle else PlayfitOpacities.faint),
+                    toneColor.copy(alpha = PlayfitOpacities.zero)
                 ),
                 center = androidx.compose.ui.geometry.Offset(size.width * 0.05f, size.height * 0.95f),
                 radius = size.width * 0.7f * (2.0f - pulseScale)

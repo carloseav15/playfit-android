@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.ProductDecisionFeedback
 import com.carlosarancibia.playfit.model.RankedSeedGame
 import com.carlosarancibia.playfit.ui.components.AlreadyPlayedDialog
-import com.carlosarancibia.playfit.ui.components.FeedbackChips
 import com.carlosarancibia.playfit.ui.components.PrimaryRecommendationCard
 import com.carlosarancibia.playfit.ui.components.AlternativeRow
 import com.carlosarancibia.playfit.ui.components.ReasonList
@@ -67,6 +66,7 @@ import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import com.carlosarancibia.playfit.ui.viewmodel.PlayfitUiState
 import com.carlosarancibia.playfit.ui.viewmodel.PlayfitViewModel
 import com.carlosarancibia.playfit.ui.viewmodel.ProductUtils
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,9 +117,9 @@ fun PlayNextScreen(
                     )
                 },
                 scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = PlayfitOpacities.opaque),
                 )
             )
         },
@@ -215,10 +215,6 @@ fun PlayNextScreen(
                                     viewModel.skipRecommendation(primary.game.gameId)
                                 },
                                 onOpenDetail = { onOpenGame(primary.game.gameId) },
-                                onFeedback = { feedback ->
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    viewModel.applyDecisionFeedback(primary.game.gameId, feedback)
-                                },
                             )
                         }
                     }
@@ -252,7 +248,7 @@ fun PlayNextScreen(
                                         )
                                         if (index < alts.lastIndex) {
                                             androidx.compose.material3.HorizontalDivider(
-                                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PlayfitOpacities.medium),
                                                 thickness = 1.dp,
                                                 modifier = Modifier.padding(horizontal = PlayfitSpacing.md)
                                             )
@@ -271,7 +267,6 @@ fun PlayNextScreen(
         }
     }
 }
-
 
 
 

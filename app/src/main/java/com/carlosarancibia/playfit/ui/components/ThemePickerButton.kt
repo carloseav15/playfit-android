@@ -24,11 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.carlosarancibia.playfit.model.ThemeMode
 
 @Composable
 fun ThemePickerButton(
-    currentTheme: String,
-    onThemeChange: (String) -> Unit,
+    currentTheme: ThemeMode,
+    onThemeChange: (ThemeMode) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -42,19 +43,19 @@ fun ThemePickerButton(
                 contentAlignment = Alignment.Center,
             ) {
                 when (currentTheme) {
-                    "light" -> Icon(
+                    ThemeMode.Light -> Icon(
                         imageVector = Icons.Filled.LightMode,
                         contentDescription = "Light mode",
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    "dark" -> Icon(
+                    ThemeMode.Dark -> Icon(
                         imageVector = Icons.Filled.DarkMode,
                         contentDescription = "Dark mode",
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    else -> Icon(
+                    ThemeMode.System -> Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = "System theme selection",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -79,11 +80,11 @@ fun ThemePickerButton(
                 text = {
                     Text(
                         "Light",
-                        fontWeight = if (currentTheme == "light") FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = if (currentTheme == ThemeMode.Light) FontWeight.Bold else FontWeight.Normal,
                     )
                 },
                 onClick = {
-                    onThemeChange("light")
+                    onThemeChange(ThemeMode.Light)
                     expanded = false
                 },
             )
@@ -99,11 +100,11 @@ fun ThemePickerButton(
                 text = {
                     Text(
                         "Dark",
-                        fontWeight = if (currentTheme == "dark") FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = if (currentTheme == ThemeMode.Dark) FontWeight.Bold else FontWeight.Normal,
                     )
                 },
                 onClick = {
-                    onThemeChange("dark")
+                    onThemeChange(ThemeMode.Dark)
                     expanded = false
                 },
             )
@@ -118,11 +119,11 @@ fun ThemePickerButton(
                 text = {
                     Text(
                         "System",
-                        fontWeight = if (currentTheme == "system") FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = if (currentTheme == ThemeMode.System) FontWeight.Bold else FontWeight.Normal,
                     )
                 },
                 onClick = {
-                    onThemeChange("system")
+                    onThemeChange(ThemeMode.System)
                     expanded = false
                 },
             )

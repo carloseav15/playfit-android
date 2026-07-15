@@ -9,6 +9,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.carlosarancibia.playfit.data.local.PreferencesDataStore
+import com.carlosarancibia.playfit.model.ThemeMode
 import com.carlosarancibia.playfit.ui.PlayfitApp
 import com.carlosarancibia.playfit.ui.theme.PlayfitTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -26,11 +27,11 @@ class MainActivity : ComponentActivity() {
         authManager.supabase.handleDeeplinks(intent)
         enableEdgeToEdge()
         setContent {
-            val themeMode by preferencesDataStore.themeMode.collectAsState(initial = "system")
-            val darkTheme = when (themeMode) {
-                "light" -> false
-                "dark" -> true
-                else -> isSystemInDarkTheme()
+            val themeMode by preferencesDataStore.themeMode.collectAsState(initial = ThemeMode.System.apiValue)
+            val darkTheme = when (ThemeMode.fromApiValue(themeMode)) {
+                ThemeMode.Light -> false
+                ThemeMode.Dark -> true
+                ThemeMode.System -> isSystemInDarkTheme()
             }
             PlayfitTheme(darkTheme = darkTheme) {
                 PlayfitApp()

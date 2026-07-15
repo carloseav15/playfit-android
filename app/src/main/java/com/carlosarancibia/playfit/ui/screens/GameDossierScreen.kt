@@ -48,11 +48,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.ProductDecisionFeedback
 import com.carlosarancibia.playfit.model.RankedSeedGame
 import com.carlosarancibia.playfit.ui.components.AlreadyPlayedDialog
-import com.carlosarancibia.playfit.ui.components.FeedbackChips
 import com.carlosarancibia.playfit.ui.components.MetricCard
 import com.carlosarancibia.playfit.ui.components.ReasonList
 import com.carlosarancibia.playfit.ui.components.ReasonTone
@@ -63,6 +61,7 @@ import com.carlosarancibia.playfit.ui.components.design.ShimmerBox
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import com.carlosarancibia.playfit.ui.viewmodel.PlayfitViewModel
 import com.carlosarancibia.playfit.ui.viewmodel.ProductUtils
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -73,7 +72,6 @@ fun GameDossierScreen(
     isPicked: Boolean = false,
 ) {
     var showPlayedDialog by remember { mutableStateOf(false) }
-    var showFeedbackChips by remember { mutableStateOf(false) }
 
     val productState by viewModel.state.collectAsState()
     val uiState by viewModel.ui.collectAsState()
@@ -108,7 +106,7 @@ fun GameDossierScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = PlayfitOpacities.opaque),
                 )
             )
         },
@@ -123,7 +121,6 @@ fun GameDossierScreen(
                         entry.game.gameId,
                         ProductDecisionFeedback.NotForMe,
                     )
-                    showFeedbackChips = true
                 },
             )
         },
@@ -190,7 +187,7 @@ fun GameDossierScreen(
                                     Text(
                                         text = "•",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.half),
                                     )
                                 }
                                 if (entry.game.primaryGenre.isNotBlank()) {
@@ -199,7 +196,6 @@ fun GameDossierScreen(
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.ExtraBold,
-                                        letterSpacing = 1.5.sp
                                     )
                                 }
                             }
@@ -237,12 +233,12 @@ fun GameDossierScreen(
                         ) {
                             labels.forEach { (label, isNegative) ->
                                 val border = if (isNegative) {
-                                    PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = 0.2f)
+                                    PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = PlayfitOpacities.muted)
                                 } else {
-                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                    MaterialTheme.colorScheme.outline.copy(alpha = PlayfitOpacities.medium)
                                 }
                                 val bg = if (isNegative) {
-                                    PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = 0.08f)
+                                    PlayfitExtendedTheme.colors.playfitNegative.copy(alpha = PlayfitOpacities.subtle)
                                 } else {
                                     MaterialTheme.colorScheme.surfaceContainerLow
                                 }
@@ -276,7 +272,6 @@ fun GameDossierScreen(
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            letterSpacing = 1.5.sp
                         )
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(PlayfitSpacing.xs),
@@ -286,19 +281,19 @@ fun GameDossierScreen(
                             gamePlatforms.forEach { (id, name) ->
                                 val isOwned = ownedPlatformIds.contains(id)
                                 val border = if (isOwned) {
-                                    PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.3f)
+                                    PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = PlayfitOpacities.medium)
                                 } else {
-                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+                                    MaterialTheme.colorScheme.outline.copy(alpha = PlayfitOpacities.light)
                                 }
                                 val bg = if (isOwned) {
-                                    PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.08f)
+                                    PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = PlayfitOpacities.subtle)
                                 } else {
-                                    MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.5f)
+                                    MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = PlayfitOpacities.half)
                                 }
                                 val textCol = if (isOwned) {
                                     PlayfitExtendedTheme.colors.playfitAccent
                                 } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.strong)
                                 }
                                 
                                 Row(
@@ -381,19 +376,8 @@ fun GameDossierScreen(
                 )
             }
 
-            if (showFeedbackChips) {
-                item {
-                    FeedbackChips(
-                        onSelect = { feedback ->
-                            viewModel.applyDecisionFeedback(entry.game.gameId, feedback)
-                            showFeedbackChips = false
-                        },
-                    )
-                }
-            }
-
             item {
-                Spacer(Modifier.height(96.dp))
+                Spacer(Modifier.height(PlayfitSpacing.xxl * 2))
             }
         }
     }
@@ -410,7 +394,6 @@ fun GameDossierScreen(
         )
     }
 }
-
 
 
 

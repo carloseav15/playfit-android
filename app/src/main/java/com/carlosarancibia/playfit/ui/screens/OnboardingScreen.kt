@@ -57,7 +57,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,6 +80,7 @@ import androidx.compose.ui.unit.sp
 import com.carlosarancibia.playfit.model.Platform
 import com.carlosarancibia.playfit.model.PlatformPreset
 import com.carlosarancibia.playfit.model.SeedGame
+import com.carlosarancibia.playfit.model.ThemeMode
 import com.carlosarancibia.playfit.model.fallbackPlatforms
 import com.carlosarancibia.playfit.model.familyDisplayName
 import com.carlosarancibia.playfit.model.platformPresets
@@ -89,6 +90,7 @@ import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -98,20 +100,20 @@ fun OnboardingScreen(
     onCancel: (() -> Unit)? = null,
     platforms: List<Platform> = fallbackPlatforms,
     onSearchGames: suspend (String) -> List<SeedGame> = { emptyList() },
-    themeMode: String = "system",
-    onThemeChange: (String) -> Unit = {},
+    themeMode: ThemeMode = ThemeMode.System,
+    onThemeChange: (ThemeMode) -> Unit = {},
 ) {
-    val stepState = if (viewModel != null) viewModel.onboardingStep.collectAsMutableState() else remember { mutableStateOf(0) }
+    val stepState = if (viewModel != null) viewModel.onboardingStep.collectAsMutableState(viewModel::setOnboardingStep) else remember { mutableStateOf(0) }
     var step by stepState
 
-    val selectedPlatformIdsState = if (viewModel != null) viewModel.onboardingSelectedPlatforms.collectAsMutableState() else remember { mutableStateOf(setOf<String>()) }
+    val selectedPlatformIdsState = if (viewModel != null) viewModel.onboardingSelectedPlatforms.collectAsMutableState(viewModel::setOnboardingSelectedPlatforms) else remember { mutableStateOf(setOf<String>()) }
     var selectedPlatformIds by selectedPlatformIdsState
-    
+
     // Represent selection slots as size-bound lists containing null-capable entries
-    val likedGamesState = if (viewModel != null) viewModel.onboardingLikedGames.collectAsMutableState() else remember { mutableStateOf(listOf<SeedGame?>(null, null, null)) }
+    val likedGamesState = if (viewModel != null) viewModel.onboardingLikedGames.collectAsMutableState(viewModel::setOnboardingLikedGames) else remember { mutableStateOf(listOf<SeedGame?>(null, null, null)) }
     var likedGames by likedGamesState
 
-    val dislikedGamesState = if (viewModel != null) viewModel.onboardingDislikedGames.collectAsMutableState() else remember { mutableStateOf(listOf<SeedGame?>(null)) }
+    val dislikedGamesState = if (viewModel != null) viewModel.onboardingDislikedGames.collectAsMutableState(viewModel::setOnboardingDislikedGames) else remember { mutableStateOf(listOf<SeedGame?>(null)) }
     var dislikedGames by dislikedGamesState
 
     // Search sheet states
@@ -238,12 +240,11 @@ fun OnboardingScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding(),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = PlayfitOpacities.nearOpaque),
                 tonalElevation = 8.dp,
-                shadowElevation = 8.dp,
                 border = BorderStroke(
                     width = 1.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = PlayfitOpacities.subtle)
                 )
             ) {
                 Row(
@@ -287,7 +288,7 @@ fun OnboardingScreen(
                         } else {
                             Modifier
                                 .clip(MaterialTheme.shapes.large)
-                                .background(PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.3f))
+                                .background(PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = PlayfitOpacities.medium))
                         }
                         Button(
                             onClick = {
@@ -315,7 +316,7 @@ fun OnboardingScreen(
                             Text(
                                 text = "Find Play Next",
                                 fontWeight = FontWeight.ExtraBold,
-                                color = if (canContinue) Color.White else Color.White.copy(alpha = 0.6f)
+                                color = if (canContinue) Color.White else Color.White.copy(alpha = PlayfitOpacities.strong)
                             )
                         }
                     } else {
@@ -327,7 +328,7 @@ fun OnboardingScreen(
                             shape = MaterialTheme.shapes.large,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = PlayfitExtendedTheme.colors.playfitAccent,
-                                disabledContainerColor = PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.3f)
+                                disabledContainerColor = PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = PlayfitOpacities.medium)
                             ),
                             modifier = Modifier.height(48.dp)
                         ) {
@@ -473,14 +474,14 @@ fun OnboardingScreen(
 
 
 @Composable
-private fun <T> MutableStateFlow<T>.collectAsMutableState(): MutableState<T> {
+private fun <T> StateFlow<T>.collectAsMutableState(onValueChange: (T) -> Unit): MutableState<T> {
     val state = collectAsState()
     return remember(this) {
         object : MutableState<T> {
             override var value: T
                 get() = state.value
                 set(value) {
-                    this@collectAsMutableState.value = value
+                    onValueChange(value)
                 }
             override fun component1(): T = value
             override fun component2(): (T) -> Unit = { value = it }

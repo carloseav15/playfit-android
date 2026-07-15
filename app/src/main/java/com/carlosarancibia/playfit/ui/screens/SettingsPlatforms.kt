@@ -37,16 +37,18 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,25 +69,24 @@ import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.components.design.SparklesIcon
 import com.carlosarancibia.playfit.ui.components.design.SunIcon
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
-import com.carlosarancibia.playfit.ui.viewmodel.PlayfitViewModel
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PlatformSelectionView(
     onBack: () -> Unit,
-    viewModel: PlayfitViewModel? = null,
+    persistedSelectedPlatformIds: Set<String> = emptySet(),
+    onUpdatePlatforms: (Set<String>) -> Unit = {},
     platforms: List<Platform> = fallbackPlatforms,
     platformsLoading: Boolean = false,
     platformsError: String? = null,
     platformsStale: Boolean = false,
 ) {
     val availablePlatforms = platforms.ifEmpty { fallbackPlatforms }
-    val persistedIds by viewModel?.preferencesDataStore?.selectedPlatformIds
-        ?.collectAsState(initial = emptySet()) ?: remember { mutableStateOf(emptySet()) }
-    val selectedPlatformIds = remember { mutableStateOf(persistedIds.toMutableSet()) }
-    LaunchedEffect(persistedIds, availablePlatforms) {
-        val validPersistedIds = persistedIds.filterTo(mutableSetOf()) { persistedId ->
+    val selectedPlatformIds = remember { mutableStateOf(persistedSelectedPlatformIds.toMutableSet()) }
+    LaunchedEffect(persistedSelectedPlatformIds, availablePlatforms) {
+        val validPersistedIds = persistedSelectedPlatformIds.filterTo(mutableSetOf()) { persistedId ->
             availablePlatforms.any { it.platformId == persistedId }
         }
         if (selectedPlatformIds.value != validPersistedIds) {
@@ -95,11 +96,11 @@ fun PlatformSelectionView(
 
     fun persist(ids: Set<String>) {
         if (ids.isEmpty()) {
-            viewModel?.updatePlatforms(ids)
+            onUpdatePlatforms(ids)
             return
         }
         selectedPlatformIds.value = ids.toMutableSet()
-        viewModel?.updatePlatforms(ids)
+        onUpdatePlatforms(ids)
     }
 
     var selectedFamily by remember { mutableStateOf("nintendo") }
@@ -110,13 +111,35 @@ fun PlatformSelectionView(
         }
     }
 
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Your Platforms",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                },
+            )
+        },
+        containerColor = Color.Transparent,
+    ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(innerPadding)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = PlayfitSpacing.md),
     ) {
-        SubViewTopBar(title = "Your Platforms", onBack = onBack)
         Spacer(Modifier.height(PlayfitSpacing.sm))
         Text(
             text = "Recommendations are only shown for games available on your active platforms. Changes save automatically.",
@@ -166,7 +189,7 @@ fun PlatformSelectionView(
                             }
                         },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = 0.15f),
+                            selectedContainerColor = PlayfitExtendedTheme.colors.playfitAccent.copy(alpha = PlayfitOpacities.light),
                         ),
                     )
                 }
@@ -277,6 +300,7 @@ fun PlatformSelectionView(
                 }
             }
         }
+    }
     }
 }
 

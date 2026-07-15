@@ -4,7 +4,7 @@ kotlin = "2.2.20"
 ksp = "2.3.4"
 coreKtx = "1.13.1"
 activityCompose = "1.8.2"
-composeBom = "2025.09.00"
+composeBom = "2026.06.01"
 navigationCompose = "2.8.0"
 lifecycle = "2.8.3"
 
@@ -47,6 +47,7 @@ hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt"
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
+hilt-work-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltWork" }
 
 # Room
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }

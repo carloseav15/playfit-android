@@ -56,6 +56,7 @@ import com.carlosarancibia.playfit.ui.components.design.GlowBackground
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import kotlinx.coroutines.launch
+import com.carlosarancibia.playfit.ui.components.design.PlayfitOpacities
 
 enum class AuthView { Options, SignIn, SignUp }
 private enum class AuthAction { Google, Guest, Email }
@@ -296,8 +297,8 @@ fun AuthScreen(
                     ) {
                         Text(
                             text = "Continue with Email",
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.ExtraBold,
-                            fontSize = 13.sp,
                         )
                     }
 
@@ -311,13 +312,13 @@ fun AuthScreen(
                                 .height(48.dp),
                             shape = MaterialTheme.shapes.medium,
                             colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = PlayfitOpacities.half),
                             ),
                         ) {
                             Text(
                                 text = "Keep Browsing as Guest",
+                                style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.ExtraBold,
-                                fontSize = 13.sp,
                             )
                         }
                     } else {
@@ -345,7 +346,7 @@ fun AuthScreen(
                                 .height(48.dp),
                             shape = MaterialTheme.shapes.medium,
                             colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = PlayfitOpacities.half),
                             ),
                             enabled = !busy,
                         ) {
@@ -368,7 +369,7 @@ fun AuthScreen(
                     Text(
                         text = "Guest profiles save choices on this device. Creating an account lets you back up and sync recommendations.",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PlayfitOpacities.heavy),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = PlayfitSpacing.sm),
                     )
@@ -499,8 +500,8 @@ private fun AuthButtonLabel(
         }
         Text(
             text = if (busy) busyText else text,
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.ExtraBold,
-            fontSize = 13.sp,
         )
     }
 }

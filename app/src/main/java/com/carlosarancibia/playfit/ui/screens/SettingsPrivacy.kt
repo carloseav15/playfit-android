@@ -37,13 +37,16 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -68,6 +71,7 @@ import com.carlosarancibia.playfit.ui.theme.PlayfitExtendedTheme
 import com.carlosarancibia.playfit.ui.viewmodel.PlayfitViewModel
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrivacySettingsView(
     onBack: () -> Unit,
@@ -78,16 +82,37 @@ fun PrivacySettingsView(
     var showReset by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = PlayfitSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.md),
-    ) {
-        SubViewTopBar(title = "Data & Privacy", onBack = onBack)
-
-        SettingsSection(title = "Reset Taste Profile") {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Data & Privacy",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                },
+            )
+        },
+        containerColor = Color.Transparent,
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = PlayfitSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(PlayfitSpacing.md),
+        ) {
+            SettingsSection(title = "Reset Taste Profile") {
             Text(
                 text = "Deletes all taste preferences, ratings, and library history. Your active account session stays, and you will restart calibration.",
                 style = MaterialTheme.typography.bodySmall,
@@ -106,9 +131,9 @@ fun PrivacySettingsView(
         }
 
         if (canDeleteAccount) {
-            SettingsSection(title = "Delete Cloud Account") {
+            SettingsSection(title = "Delete Cloud Profile") {
                 Text(
-                    text = "Permanently deletes your cloud Playfit profile, including synchronized taste, picks, and decision history. Your sign-in credentials are managed by your auth provider and are not deleted here.",
+                    text = "Permanently deletes your cloud Playfit profile, including synchronized taste, picks, and decision history. Your sign-in credentials are not deleted.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -120,9 +145,10 @@ fun PrivacySettingsView(
                         contentColor = PlayfitExtendedTheme.colors.playfitNegative,
                     ),
                 ) {
-                    Text("Delete Account", fontWeight = FontWeight.Bold)
+                    Text("Delete Cloud Profile", fontWeight = FontWeight.Bold)
                 }
             }
+        }
         }
     }
 
