@@ -8,7 +8,7 @@ native Android showcase of that product; full product context lives at
 
 This repo is a subordinate/portfolio implementation of the Playfit mobile product vision.
 
-The project starts as a Kotlin + Jetpack Compose app with mock data and a fully wired local-first data layer (Room, Hilt, WorkManager). The first goal is to match the iOS SwiftUI scaffold, then prove the native Android flow works before adding auth and full API sync.
+The app is Kotlin + Jetpack Compose with a fully wired local-first data layer (Room, Hilt, WorkManager) backed by the real Playfit API and Supabase Auth/PostgREST — no mock data or placeholder repository left.
 
 ### Route mapping
 
@@ -42,7 +42,7 @@ This is not a full web port. The target is a native Android showcase that feels 
 - ViewModel + StateFlow architecture.
 - DataStore for preferences.
 - WorkManager for deferred sync.
-- Mock repository for the first UI pass (ready for API swap).
+- Real repository (`PlayfitRepositoryImpl`) wired against the Playfit API and Supabase.
 - Supabase Kotlin SDK wired for auth and PostgREST.
 - Ktor/OkHttp + Retrofit for network.
 - Kotlinx Serialization.
@@ -57,9 +57,6 @@ Build pinned to versions cached on this machine for offline compilation:
 - Material 3 Expressive polish where it improves clarity.
 - Adaptive UI for phones, tablets, and foldables.
 - Upgrade to the current 2026 AndroidX/Compose stack once dependency download is intentionally allowed.
-- Real API client replacing mock repository.
-- SwiftData-style sync via WorkManager + Room.
-- Full Supabase Auth integration (email, OAuth, anonymous → authenticated migration).
 - Screenshots and release artifacts for portfolio.
 
 ## Folder Layout
@@ -71,7 +68,7 @@ android-compose/
       main/java/com/carlosarancibia/playfit/
         di/             — Hilt modules (AppModule, NetworkModule, RepositoryModule, IdentityModule)
         model/          — Domain models + product rules (transitions, taste, onboarding)
-        data/           — Repository interface + impl, mock data
+        data/           — Repository interface + impl (Supabase/Retrofit-backed), local cache
         ui/
           theme/        — Material 3 theme
           components/   — Reusable composables (GlassCard, ScoreBadge, Shimmer, etc.)
@@ -109,8 +106,7 @@ The current launcher icon is a placeholder vector. Replace it before portfolio s
 
 ## Next Milestones
 
-1. Connect mock repository to real Playfit API endpoints.
-2. Add Supabase Auth with anonymous → authenticated migration flow.
-3. Validate Room cache + WorkManager sync for offline availability.
-4. Write Compose UI tests for core screens.
-5. Replace placeholder icon, add portfolio screenshots, and publish release APK.
+Real API integration, Supabase Auth (anonymous → authenticated), Room/WorkManager offline sync,
+and Compose UI test coverage are all done. What's left before Play Store distribution — signing
+config, launcher icon, store listing assets — is tracked in
+[tasks/android.md](../tasks/android.md).
