@@ -24,6 +24,17 @@ fun requiredProperty(name: String): String =
 fun buildConfigString(value: String): String =
     "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
+val releaseKeystorePath = System.getenv("PLAYFIT_UPLOAD_STORE_FILE")
+val releaseKeystorePassword = System.getenv("PLAYFIT_UPLOAD_STORE_PASSWORD")
+val releaseKeyAlias = System.getenv("PLAYFIT_UPLOAD_KEY_ALIAS")
+val releaseKeyPassword = System.getenv("PLAYFIT_UPLOAD_KEY_PASSWORD")
+val hasReleaseSigning = listOf(
+    releaseKeystorePath,
+    releaseKeystorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all { !it.isNullOrBlank() }
+
 android {
     namespace = "com.carlosarancibia.playfit"
     compileSdk = 36
@@ -52,6 +63,14 @@ android {
         }
         getByName("release") {
             isMinifyEnabled = true
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.create("releaseUpload").apply {
+                    storeFile = file(requireNotNull(releaseKeystorePath))
+                    storePassword = releaseKeystorePassword
+                    keyAlias = releaseKeyAlias
+                    keyPassword = releaseKeyPassword
+                }
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

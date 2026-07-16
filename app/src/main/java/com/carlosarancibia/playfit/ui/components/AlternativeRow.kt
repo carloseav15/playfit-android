@@ -21,6 +21,10 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.carlosarancibia.playfit.model.RankedSeedGame
@@ -38,7 +42,8 @@ fun AlternativeRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { role = Role.Button }
             .padding(vertical = PlayfitSpacing.md, horizontal = PlayfitSpacing.md),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(PlayfitSpacing.md),
@@ -94,7 +99,7 @@ fun AlternativeRow(
             
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "View details",
+                contentDescription = stringResource(com.carlosarancibia.playfit.R.string.accessibility_view_details),
                 modifier = Modifier.size(16.dp),
                 tint = chevronColor
             )

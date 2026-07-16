@@ -5,27 +5,13 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -33,14 +19,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -59,7 +44,6 @@ import com.carlosarancibia.playfit.model.ProductGameState
 import com.carlosarancibia.playfit.model.ProductTasteHistoryEntry
 import com.carlosarancibia.playfit.model.ProductTasteModel
 import com.carlosarancibia.playfit.ui.components.design.GlowBackground
-import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import com.carlosarancibia.playfit.ui.screens.AuthScreen
 import com.carlosarancibia.playfit.ui.screens.DecisionIntroScreen
 import com.carlosarancibia.playfit.ui.screens.GameDossierNotFound
@@ -88,20 +72,6 @@ import com.carlosarancibia.playfit.model.SeedGame
 import com.carlosarancibia.playfit.model.ProductState
 import com.carlosarancibia.playfit.data.auth.AuthResult
 
-private data class BottomNavItem(
-    val route: String,
-    val label: String,
-    val icon: ImageVector,
-)
-
-private val bottomNavItems = listOf(
-    BottomNavItem("play-next", "Play Next", Icons.Default.PlayArrow),
-    BottomNavItem("picks", "Picks", Icons.Default.FavoriteBorder),
-    BottomNavItem("taste", "Taste", Icons.AutoMirrored.Filled.List),
-    BottomNavItem("search", "Search", Icons.Default.Search),
-    BottomNavItem("settings", "Settings", Icons.Default.Settings),
-)
-
 private val topLevelRoutes = bottomNavItems.map { it.route }
 
 @Composable
@@ -113,16 +83,16 @@ fun PlayfitApp(
     val currentRoute = backStack?.destination?.route
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val uiState by viewModel.ui.collectAsState()
-    val playNext by viewModel.playNext.collectAsState()
-    val picks by viewModel.picks.collectAsState()
-    val platforms by viewModel.platforms.collectAsState()
-    val platformsUi by viewModel.platformsUi.collectAsState()
-    val productState by viewModel.state.collectAsState()
-    val onboardingCompleted by viewModel.onboardingCompleted.collectAsState()
-    val authState by viewModel.authState.collectAsState()
-    val themeMode by viewModel.themeMode.collectAsState()
-    val pendingPasswordRecovery by viewModel.pendingPasswordRecovery.collectAsState()
+    val uiState by viewModel.ui.collectAsStateWithLifecycle()
+    val playNext by viewModel.playNext.collectAsStateWithLifecycle()
+    val picks by viewModel.picks.collectAsStateWithLifecycle()
+    val platforms by viewModel.platforms.collectAsStateWithLifecycle()
+    val platformsUi by viewModel.platformsUi.collectAsStateWithLifecycle()
+    val productState by viewModel.state.collectAsStateWithLifecycle()
+    val onboardingCompleted by viewModel.onboardingCompleted.collectAsStateWithLifecycle()
+    val authState by viewModel.authState.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val pendingPasswordRecovery by viewModel.pendingPasswordRecovery.collectAsStateWithLifecycle()
 
     var showOnboarding by remember { mutableStateOf(false) }
     var showAuth by remember { mutableStateOf(false) }
@@ -259,54 +229,17 @@ fun PlayfitApp(
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 0.dp,
-                ) {
-                    bottomNavItems.forEach { item ->
-                        val selected = currentRoute == item.route
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = {
-                                if (item.route == "picks" && picks.isNotEmpty()) {
-                                    BadgedBox(badge = {
-                                        Badge { Text("${picks.size}", style = MaterialTheme.typography.labelSmall) }
-                                    }) {
-                                        Icon(
-                                            imageVector = item.icon,
-                                            contentDescription = item.label,
-                                        )
-                                    }
-                                } else {
-                                    Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = item.label,
-                                    )
-                                }
-                            },
-                            label = {
-                                Text(
-                                    text = item.label,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                            ),
-                        )
-                    }
-                }
+                PlayfitBottomBar(
+                    currentRoute = currentRoute,
+                    pickCount = picks.size,
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
             }
         },
         snackbarHost = {
@@ -319,27 +252,12 @@ fun PlayfitApp(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Sync status bar
-            if (uiState.refreshing || uiState.saving || uiState.pendingSync || uiState.showingStaleData) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                        .padding(horizontal = PlayfitSpacing.md, vertical = 7.dp),
-                ) {
-                    Text(
-                        text = when {
-                            uiState.refreshing -> "Syncing changes\u2026"
-                            uiState.saving -> "Saving\u2026"
-                            uiState.pendingSync -> "Changes saved on this device; waiting to sync"
-                            else -> "Showing saved data; pull to refresh"
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
+            SyncStatusBar(
+                refreshing = uiState.refreshing,
+                saving = uiState.saving,
+                pendingSync = uiState.pendingSync,
+                showingStaleData = uiState.showingStaleData,
+            )
 
             NavHost(
                 navController = navController,
@@ -384,7 +302,7 @@ fun PlayfitApp(
                 popExitTransition = { slideOutHorizontally { it } },
             ) {
                 val profile = productState.user.profile
-                val tasteModel by viewModel.tasteModel.collectAsState()
+                val tasteModel by viewModel.tasteModel.collectAsStateWithLifecycle()
                 TasteScreen(
                     profile = profile ?: ProductProfile(),
                     tasteModel = tasteModel,
@@ -411,7 +329,7 @@ fun PlayfitApp(
                 popEnterTransition = { slideInHorizontally { -it } },
                 popExitTransition = { slideOutHorizontally { it } },
             ) {
-                val searchState by viewModel.search.collectAsState()
+                val searchState by viewModel.search.collectAsStateWithLifecycle()
                 LaunchedEffect(Unit) { viewModel.resetSearch() }
                 SearchScreen(
                     searchState = searchState,
@@ -455,7 +373,7 @@ fun PlayfitApp(
                 popExitTransition = { slideOutVertically { it } },
             ) { entry ->
                 val gameId = entry.arguments?.getString("gameId") ?: return@composable
-                val dossier by viewModel.dossier.collectAsState()
+                val dossier by viewModel.dossier.collectAsStateWithLifecycle()
                 LaunchedEffect(gameId) { viewModel.loadGameRecommendation(gameId) }
                 when (val current = dossier) {
                     is DossierUiState.Success -> if (current.entry.game.gameId == gameId) {
@@ -497,7 +415,7 @@ fun PlayfitApp(
                 popEnterTransition = { slideInHorizontally { -it } },
                 popExitTransition = { slideOutHorizontally { it } },
             ) {
-                val tasteModel by viewModel.tasteModel.collectAsState()
+                val tasteModel by viewModel.tasteModel.collectAsStateWithLifecycle()
                 val nodes = remember(productState, picks, playNext, tasteModel) {
                     buildMapNodes(
                         state = productState,

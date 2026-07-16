@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_play_next">Play Next</string>
+    <string name="nav_picks">Picks</string>
+    <string name="nav_taste">Taste</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_settings">Settings</string>
+    <string name="accessibility_view_details">View details</string>
+    <string name="syncing_changes">Syncing changes…</string>
+    <string name="saving_changes">Saving…</string>
+    <string name="pending_sync_status">Changes saved on this device; waiting to sync</string>
+    <string name="stale_data_status">Showing saved data; pull to refresh</string>
+</resources>

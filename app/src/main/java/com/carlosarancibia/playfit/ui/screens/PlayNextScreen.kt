@@ -58,6 +58,7 @@ import com.carlosarancibia.playfit.ui.components.design.PlayfitCoverArt
 import com.carlosarancibia.playfit.ui.components.design.PlayfitGlassCard
 import com.carlosarancibia.playfit.ui.components.design.PlayfitSpacing
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carlosarancibia.playfit.ui.components.design.ScoreBadge
 import com.carlosarancibia.playfit.ui.components.design.ShimmerBox
 import com.carlosarancibia.playfit.ui.components.design.ShimmerCard
@@ -77,12 +78,12 @@ fun PlayNextScreen(
     onOpenSettings: () -> Unit = {},
 ) {
     val haptic = LocalHapticFeedback.current
-    val modelState = viewModel.playNext.collectAsState()
+    val modelState = viewModel.playNext.collectAsStateWithLifecycle()
     val model = modelState.value
-    val productState by viewModel.state.collectAsState()
+    val productState by viewModel.state.collectAsStateWithLifecycle()
     val profile = productState.user.profile
-    val excludedIds by viewModel.excludedIds.collectAsState()
-    val selectedPlatformIds by viewModel.selectedPlatformIds.collectAsState()
+    val excludedIds by viewModel.excludedIds.collectAsStateWithLifecycle()
+    val selectedPlatformIds by viewModel.selectedPlatformIds.collectAsStateWithLifecycle()
     var showSlowLoading by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.loading, model) {
@@ -267,7 +268,6 @@ fun PlayNextScreen(
         }
     }
 }
-
 
 
 

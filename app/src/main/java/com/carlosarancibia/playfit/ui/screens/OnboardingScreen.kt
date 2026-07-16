@@ -53,6 +53,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.MutableState
@@ -103,7 +104,7 @@ fun OnboardingScreen(
     themeMode: ThemeMode = ThemeMode.System,
     onThemeChange: (ThemeMode) -> Unit = {},
 ) {
-    val stepState = if (viewModel != null) viewModel.onboardingStep.collectAsMutableState(viewModel::setOnboardingStep) else remember { mutableStateOf(0) }
+    val stepState = if (viewModel != null) viewModel.onboardingStep.collectAsMutableState(viewModel::setOnboardingStep) else remember { mutableIntStateOf(0) }
     var step by stepState
 
     val selectedPlatformIdsState = if (viewModel != null) viewModel.onboardingSelectedPlatforms.collectAsMutableState(viewModel::setOnboardingSelectedPlatforms) else remember { mutableStateOf(setOf<String>()) }

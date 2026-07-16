@@ -1,6 +1,7 @@
 package com.carlosarancibia.playfit.data.auth
 
 import android.content.Context
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
 import javax.inject.Inject
@@ -20,7 +21,7 @@ internal class SharedPreferencesDeviceIdStore @Inject constructor(
     override fun read(): String? = preferences.getString(KEY_DEVICE_ID, null)
 
     override fun write(value: String) {
-        preferences.edit().putString(KEY_DEVICE_ID, value).apply()
+        preferences.edit { putString(KEY_DEVICE_ID, value) }
     }
 
     private companion object {

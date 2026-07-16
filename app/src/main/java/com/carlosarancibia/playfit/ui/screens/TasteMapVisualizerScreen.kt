@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -274,8 +275,8 @@ private fun AffinityMapCanvas(
         fontWeight = FontWeight.Bold,
     )
 
-    var canvasWidthPx by remember { mutableStateOf(0f) }
-    var canvasHeightPx by remember { mutableStateOf(0f) }
+    var canvasWidthPx by remember { mutableFloatStateOf(0f) }
+    var canvasHeightPx by remember { mutableFloatStateOf(0f) }
 
     val nodeHitPositions = remember(nodes, canvasWidthPx, canvasHeightPx) {
         if (canvasWidthPx <= 0f || canvasHeightPx <= 0f) emptyMap()

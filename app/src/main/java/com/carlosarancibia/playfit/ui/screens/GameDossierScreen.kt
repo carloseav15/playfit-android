@@ -38,6 +38,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,8 +74,8 @@ fun GameDossierScreen(
 ) {
     var showPlayedDialog by remember { mutableStateOf(false) }
 
-    val productState by viewModel.state.collectAsState()
-    val uiState by viewModel.ui.collectAsState()
+    val productState by viewModel.state.collectAsStateWithLifecycle()
+    val uiState by viewModel.ui.collectAsStateWithLifecycle()
 
     val gameState = remember(productState.user.gameStates, entry.game.gameId) {
         productState.user.gameStates[entry.game.gameId]
@@ -394,6 +395,5 @@ fun GameDossierScreen(
         )
     }
 }
-
 
 

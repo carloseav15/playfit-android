@@ -84,7 +84,9 @@ fun PlatformSelectionView(
     platformsStale: Boolean = false,
 ) {
     val availablePlatforms = platforms.ifEmpty { fallbackPlatforms }
-    val selectedPlatformIds = remember { mutableStateOf(persistedSelectedPlatformIds.toMutableSet()) }
+    // Keep the state value immutable. Mutating a MutableSet in place does not reliably
+    // invalidate Compose snapshots and can leave the selection UI stale.
+    val selectedPlatformIds = remember { mutableStateOf(persistedSelectedPlatformIds) }
     LaunchedEffect(persistedSelectedPlatformIds, availablePlatforms) {
         val validPersistedIds = persistedSelectedPlatformIds.filterTo(mutableSetOf()) { persistedId ->
             availablePlatforms.any { it.platformId == persistedId }
@@ -99,7 +101,7 @@ fun PlatformSelectionView(
             onUpdatePlatforms(ids)
             return
         }
-        selectedPlatformIds.value = ids.toMutableSet()
+        selectedPlatformIds.value = ids.toSet()
         onUpdatePlatforms(ids)
     }
 

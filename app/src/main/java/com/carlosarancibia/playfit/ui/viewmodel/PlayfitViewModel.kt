@@ -73,11 +73,6 @@ data class SearchUiState(
     val hasMore: Boolean get() = results.size < total
 }
 
-internal fun mergeSearchResults(existing: List<SeedGame>, incoming: List<SeedGame>): List<SeedGame> {
-    val seen = existing.mapTo(mutableSetOf()) { it.gameId }
-    return existing + incoming.filterNot { it.gameId in seen }
-}
-
 sealed interface DossierUiState {
     data object Idle : DossierUiState
     data class Loading(val gameId: String) : DossierUiState
@@ -132,10 +127,12 @@ class PlayfitViewModel @Inject constructor(
     private val _dossier = MutableStateFlow<DossierUiState>(DossierUiState.Idle)
     val dossier: StateFlow<DossierUiState> = _dossier.asStateFlow()
 
-    private val _search = MutableStateFlow(SearchUiState())
-    val search: StateFlow<SearchUiState> = _search.asStateFlow()
-    private var searchJob: Job? = null
-    private var searchRequestSeq = 0L
+    private val searchCoordinator = SearchCoordinator(
+        repository = repository,
+        scope = viewModelScope,
+        platforms = { _platforms.value },
+    )
+    val search: StateFlow<SearchUiState> = searchCoordinator.state
 
     private val _onboardingCompleted = MutableStateFlow(false)
     val onboardingCompleted: StateFlow<Boolean> = _onboardingCompleted.asStateFlow()
@@ -521,7 +518,7 @@ class PlayfitViewModel @Inject constructor(
     fun skipRecommendation(gameId: String) {
         _excludedIds.value = _excludedIds.value + gameId
         removeRecommendation(gameId)
-        setToast("Skipped")
+        setToast(PlayfitMessages.skipped)
     }
 
     fun clearSkipped() {
@@ -540,76 +537,23 @@ class PlayfitViewModel @Inject constructor(
     }
 
     fun updateSearchQuery(query: String) {
-        _search.value = _search.value.copy(query = query)
-        triggerSearch(resetPage = true)
+        searchCoordinator.updateQuery(query)
     }
 
     fun updateSearchFamily(family: String?) {
-        val next = if (_search.value.selectedFamily == family) null else family
-        _search.value = _search.value.copy(selectedFamily = next)
-        triggerSearch(resetPage = true)
+        searchCoordinator.updateFamily(family)
     }
 
     fun loadMoreSearchResults() {
-        if (_search.value.loadingMore || !_search.value.hasMore) return
-        triggerSearch(resetPage = false)
+        searchCoordinator.loadMore()
     }
 
     fun retrySearch() {
-        triggerSearch(resetPage = true)
+        searchCoordinator.retry()
     }
 
     fun resetSearch() {
-        searchJob?.cancel()
-        _search.value = SearchUiState()
-    }
-
-    private fun triggerSearch(resetPage: Boolean) {
-        searchJob?.cancel()
-        val state = _search.value
-        val nextPage = if (resetPage) 1 else state.page + 1
-        val mySeq = ++searchRequestSeq
-
-        searchJob = viewModelScope.launch {
-            _search.value = _search.value.copy(
-                page = nextPage,
-                loading = resetPage,
-                loadingMore = !resetPage,
-                error = null,
-            )
-            delay(SEARCH_DEBOUNCE_MS)
-            if (mySeq != searchRequestSeq) return@launch
-
-            val platformIds = state.selectedFamily
-                ?.let { family -> _platforms.value.filter { it.family == family }.map { it.platformId } }
-                .orEmpty()
-
-            val result = safeRepositoryCall {
-                repository.searchGames(
-                    query = state.query,
-                    platformIds = platformIds,
-                    page = nextPage,
-                    pageSize = SEARCH_PAGE_SIZE,
-                )
-            }
-            if (mySeq != searchRequestSeq) return@launch
-
-            result.fold(
-                onSuccess = { success ->
-                    val page = success.data
-                    _search.value = _search.value.copy(
-                        results = if (resetPage) page.games else mergeSearchResults(_search.value.results, page.games),
-                        total = page.total,
-                        loading = false,
-                        loadingMore = false,
-                        error = null,
-                    )
-                },
-                onFailure = { error ->
-                    _search.value = _search.value.copy(loading = false, loadingMore = false, error = error.message)
-                },
-            )
-        }
+        searchCoordinator.reset()
     }
 
     fun loadTasteModel() {
@@ -650,10 +594,10 @@ class PlayfitViewModel @Inject constructor(
                 val existing = _state.value.user.gameStates[gameId]
                 updateGameState(ProductGameStateTransitions.setPick(existing, gameId, picked = false))
                 loadTasteModel()
-                setToast("Removed from picks.")
+                setToast(PlayfitMessages.removedFromPicks)
             } catch (_: Exception) {
                 _ui.value = _ui.value.copy(saving = false)
-                setToast("Could not remove pick.")
+                setToast(PlayfitMessages.couldNotRemovePick)
             }
         }
     }
@@ -715,7 +659,7 @@ class PlayfitViewModel @Inject constructor(
                 },
             )
             loadTasteModel()
-            setToast("Signal deleted.")
+            setToast(PlayfitMessages.signalDeleted)
         }
     }
 
@@ -786,18 +730,7 @@ class PlayfitViewModel @Inject constructor(
             }
             rebuildProfileFromCurrentSignals()
             loadTasteModel()
-            val message = when (feedback) {
-                ProductDecisionFeedback.NotForMe -> "Noted. Playfit will find a better fit."
-                ProductDecisionFeedback.PlayedLoved -> "Already played and loved. Playfit will learn from it."
-                ProductDecisionFeedback.PlayedLiked -> "Already played and liked."
-                ProductDecisionFeedback.PlayedMixed -> "Marked as mixed. Playfit will tune around it."
-                ProductDecisionFeedback.PlayedDropped -> "Marked as dropped. Playfit will steer away."
-                ProductDecisionFeedback.Play -> "Set as playing. Your next pick will adapt around it."
-                ProductDecisionFeedback.Later -> "Saved for later. Playfit will look past it for now."
-                ProductDecisionFeedback.Loved -> "Marked as loved."
-                ProductDecisionFeedback.Liked -> "Marked as liked."
-                ProductDecisionFeedback.Mixed -> "Marked as mixed."
-            }
+            val message = PlayfitMessages.decisionFeedback(feedback)
             pendingDecisionUndo = undo
             setToast(message, actionLabel = "Undo")
         }
@@ -831,7 +764,7 @@ class PlayfitViewModel @Inject constructor(
                     // last so an Undo always wins over that stale state update.
                     _state.value = undo.previousProductState
                     loadTasteModel()
-                    setToast("Undone.")
+            setToast(PlayfitMessages.undone)
                 },
             )
         }
@@ -1007,7 +940,5 @@ class PlayfitViewModel @Inject constructor(
     private companion object {
         const val MAX_ONBOARDING_RECS_ATTEMPTS = 3
         const val ONBOARDING_RECS_RETRY_DELAY_MS = 1500L
-        const val SEARCH_PAGE_SIZE = 24
-        const val SEARCH_DEBOUNCE_MS = 250L
     }
 }

@@ -17,6 +17,9 @@ app/build/
 
 # Environment
 .env
+*.jks
+*.keystore
+app/build/outputs/
 
 # Agent artifacts
 .claude/

@@ -82,8 +82,9 @@ fun MoonIcon(modifier: Modifier = Modifier, color: Color, contentDescription: St
 }
 
 @Composable
-fun CompassIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
+fun CompassIcon(modifier: Modifier = Modifier, color: Color, contentDescription: String? = null) {
+    Box(modifier = modifier.semantics { if (contentDescription != null) this.contentDescription = contentDescription }) {
+        Canvas(modifier = Modifier.matchParentSize()) {
         val w = size.width
         val h = size.height
         val center = Offset(w / 2f, h / 2f)
@@ -108,12 +109,14 @@ fun CompassIcon(modifier: Modifier = Modifier, color: Color) {
             end = Offset(w / 2f, h * 0.77f),
             strokeWidth = w * 0.04f
         )
+        }
     }
 }
 
 @Composable
-fun LoginIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
+fun LoginIcon(modifier: Modifier = Modifier, color: Color, contentDescription: String? = null) {
+    Box(modifier = modifier.semantics { if (contentDescription != null) this.contentDescription = contentDescription }) {
+        Canvas(modifier = Modifier.matchParentSize()) {
         val w = size.width
         val h = size.height
         val bracketPath = Path().apply {
@@ -141,12 +144,14 @@ fun LoginIcon(modifier: Modifier = Modifier, color: Color) {
             color = color,
             style = Stroke(width = w * 0.08f, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
+        }
     }
 }
 
 @Composable
-fun GamepadIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
+fun GamepadIcon(modifier: Modifier = Modifier, color: Color, contentDescription: String? = null) {
+    Box(modifier = modifier.semantics { if (contentDescription != null) this.contentDescription = contentDescription }) {
+        Canvas(modifier = Modifier.matchParentSize()) {
         val width = size.width
         val height = size.height
         val path = Path().apply {
@@ -180,12 +185,14 @@ fun GamepadIcon(modifier: Modifier = Modifier, color: Color) {
         val btnRad = width * 0.07f
         drawCircle(color = color, radius = btnRad, center = Offset(btnCenter.x + btnRad * 1.2f, btnCenter.y - btnRad * 0.6f))
         drawCircle(color = color, radius = btnRad, center = Offset(btnCenter.x - btnRad * 1.2f, btnCenter.y + btnRad * 0.6f))
+        }
     }
 }
 
 @Composable
-fun LaptopIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
+fun LaptopIcon(modifier: Modifier = Modifier, color: Color, contentDescription: String? = null) {
+    Box(modifier = modifier.semantics { if (contentDescription != null) this.contentDescription = contentDescription }) {
+        Canvas(modifier = Modifier.matchParentSize()) {
         val width = size.width
         val height = size.height
 
@@ -221,12 +228,14 @@ fun LaptopIcon(modifier: Modifier = Modifier, color: Color) {
             close()
         }
         drawPath(path = basePath, color = color, style = Stroke(width = 2.dp.toPx()))
+        }
     }
 }
 
 @Composable
-fun TvIcon(modifier: Modifier = Modifier, color: Color) {
-    Canvas(modifier = modifier) {
+fun TvIcon(modifier: Modifier = Modifier, color: Color, contentDescription: String? = null) {
+    Box(modifier = modifier.semantics { if (contentDescription != null) this.contentDescription = contentDescription }) {
+        Canvas(modifier = Modifier.matchParentSize()) {
         val width = size.width
         val height = size.height
 
@@ -275,5 +284,6 @@ fun TvIcon(modifier: Modifier = Modifier, color: Color) {
             end = Offset(width * 0.75f, height * 0.05f),
             strokeWidth = 2.dp.toPx()
         )
+        }
     }
 }

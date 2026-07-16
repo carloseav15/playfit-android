@@ -47,6 +47,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -92,10 +93,10 @@ fun SettingsScreen(
     var viewMode by remember { mutableStateOf(SettingsViewMode.Main) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    val authState by viewModel?.authState?.collectAsState() ?: remember { mutableStateOf(AuthState()) }
-    val uiState by viewModel?.ui?.collectAsState() ?: remember { mutableStateOf(PlayfitUiState()) }
-    val themeMode by viewModel?.themeMode?.collectAsState() ?: remember { mutableStateOf(ThemeMode.System) }
-    val selectedPlatformIds by viewModel?.selectedPlatformIds?.collectAsState() ?: remember { mutableStateOf(emptySet()) }
+    val authState by viewModel?.authState?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(AuthState()) }
+    val uiState by viewModel?.ui?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(PlayfitUiState()) }
+    val themeMode by viewModel?.themeMode?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(ThemeMode.System) }
+    val selectedPlatformIds by viewModel?.selectedPlatformIds?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(emptySet()) }
 
     Box(
         modifier = Modifier
@@ -456,4 +457,3 @@ fun SettingsSection(
         }
     }
 }
-
