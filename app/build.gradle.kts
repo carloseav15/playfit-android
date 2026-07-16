@@ -18,6 +18,7 @@ val localProperties = Properties().apply {
 
 fun requiredProperty(name: String): String =
     project.findProperty(name)?.toString()
+        ?: System.getenv(name)
         ?: localProperties.getProperty(name)
         ?: error("Missing required Gradle property: $name")
 
