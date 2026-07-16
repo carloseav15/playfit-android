@@ -48,3 +48,9 @@ jobs:
           PLAYFIT_UPLOAD_KEY_ALIAS: ${{ secrets.PLAYFIT_UPLOAD_KEY_ALIAS }}
           PLAYFIT_UPLOAD_KEY_PASSWORD: ${{ secrets.PLAYFIT_UPLOAD_KEY_PASSWORD }}
         run: ./gradlew bundleRelease
+      - name: Upload release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: playfit-release-bundle
+          path: app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
